@@ -12,6 +12,11 @@ class Record:
     def __init__(self, rid, key, columns):
         self.rid = rid
         self.key = key
+        self.indirection = None 
+        self.schema_encoding = 0 
+        self.start_time = None
+        self.last_updated_time = None
+        
         self.columns = columns
         
 
