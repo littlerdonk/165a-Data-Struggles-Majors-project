@@ -13,6 +13,7 @@ class Record:
         self.rid = rid
         self.key = key
         self.columns = columns
+        
 
 class Table:
 
@@ -27,6 +28,7 @@ class Table:
         self.num_columns = num_columns
         self.page_directory = {}
         self.index = Index(self)
+        self.merge_threshold_pages = 50  # The threshold to trigger a merge
         pass
 
     def __merge(self):
