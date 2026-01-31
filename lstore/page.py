@@ -7,7 +7,7 @@ class Page:
         self.capacity = capacity
 
     def has_capacity(self):
-        return self.num_records < len(self.data) # Nicholas
+        return self.num_records < self.capacity # Nicholas
         pass
 
     def write(self, value):
