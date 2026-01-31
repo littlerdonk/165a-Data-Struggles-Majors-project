@@ -34,7 +34,19 @@ class Table:
         self.page_directory = {}
         self.index = Index(self)
         self.merge_threshold_pages = 50  # The threshold to trigger a merge
+        self.rid = 0
+        self.base_pages = [[] for col in range(self.num_columns)]
         pass
+
+    def insert(self, values):
+        if len(values) == self.num_columns:
+            rid = self.rid
+            self.rid += 1
+            for col, val in range(values):
+                # Add code to iterate through each column in self.base_pages and add value if there is space for it.
+
+        else:
+            return False
 
     def __merge(self):
         print("merge is happening")
