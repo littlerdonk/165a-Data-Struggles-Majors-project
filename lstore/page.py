@@ -26,5 +26,24 @@ class Page:
         else:
             return -1
             
-    def read()
+    def read(self, offset):
+        #Sage
+        #Read a value from the page at the given offset.
+        #Returns the integer value stored at that offset.
+        value_bytes = self.data[offset:offset + RECORD_SIZE]
+        value = int.from_bytes(value_bytes, byterorder = 'big', signed=True)
+        return value 
+
+    def update(self, offset, value): 
+        #Sage
+        #update a value at a specific offset in the page
+        if value is None: 
+            value = 0 
+
+        self.data[offser:offset + RECORD_SIZE] = value .to_byters(RECORD_SIZE, byteorder'big', signed=True)
+
+
+    def get_num_records(self):
+        #Sage
+        return self.num_records
 
