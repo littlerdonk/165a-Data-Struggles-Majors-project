@@ -1,4 +1,5 @@
 from lstore.index import Index
+from lstore.index import Page
 from time import time
 
 INDIRECTION_COLUMN = 0
@@ -16,7 +17,6 @@ class Record:
         self.schema_encoding = 0 
         self.start_time = None
         self.last_updated_time = None
-        
         self.columns = columns
         
 
@@ -35,10 +35,9 @@ class Table:
         self.index = Index(self)
         self.merge_threshold_pages = 50  # The threshold to trigger a merge
         self.rid = 0
-        self.base_pages = [[] for col in range(self.num_columns)]
-        pass
+        self.base_pages = [[] for col in range(self.num_columns)] # we should add a way to import data from Page.py
 
-    def insert(self, values):
+    def insert(self, values): # Nicholas
         if len(values) == self.num_columns:
             rid = self.rid
             self.rid += 1
@@ -47,6 +46,16 @@ class Table:
 
         else:
             return False
+
+    def delete(self, rid): # Nicholas
+        if rid in self.page_directory:
+            location = self.page_directory[rid]
+            for col in range(self.num_columns):
+                page = self.base_pages[location[0]]
+                page.values[location[1]] = None
+            return
+        else:
+            print("RID Not Found in Page Directory")
 
     def __merge(self):
         print("merge is happening")
