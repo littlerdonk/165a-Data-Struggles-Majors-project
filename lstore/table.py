@@ -37,13 +37,27 @@ class Table:
         self.rid = 0
         self.base_pages = [[] for col in range(self.num_columns)] # we should add a way to import data from Page.py
 
-    def insert(self, values): # Nicholas
+    def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:
             rid = self.rid
             self.rid += 1
-            for col, val in range(values):
-                # Add code to iterate through each column in self.base_pages and add value if there is space for it.
+            #find the page to insert into using the first to check capacity 
+            page_index = 0 
+            current_page = self.base_pages[0][page_index]
+            
+            #check for full capacity and create new pages for all columns if full 
+            if not current_page.has_capacity():
+                page_index = len(self.base_pages[0])
+                for col in range(self.num_columns):self.base_pages[col].append(Page(capacity=512))
+                    
+            # Insert the value into each column's page
+            offset = None 
+            for col in range(self.num_columns):
+                page = self.base_pages[col][page_index]
+                offset = page.write(values[col])
 
+            self.page_directory[rid] = (page_index, offset)
+            return rid 
         else:
             return False
 
