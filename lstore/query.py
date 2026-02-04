@@ -10,18 +10,28 @@ class Query:
     Any query that crashes (due to exceptions) should return False
     """
     def __init__(self, table):
-        self.table = table
-        pass
+        self.table = table # store reference to table we'll be querying
 
     
     """
     # internal Method
-    # Read a record with specified RID
+    # Delete a record with specified RID
     # Returns True upon succesful deletion
     # Return False if record doesn't exist or is locked due to 2PL
     """
-    def delete(self, primary_key):
-        pass
+    def delete(self, primary_key): # naomi
+        try:
+        key_column = self.table.key  # Get which column is the key
+        # B-Tree index to find all RIDs that have primary_key value
+        matching_rids = self.table.index.locate(key_column, primary_key) # returns a list of RIDs
+        if matching_rids: # if records with primary key value found
+            rid = matching_rids[0] # get first matching RID
+            self.table.delete(rid) # call on the delete method to remove record
+            return True 
+        else: # no record is found with the primary key value
+            return False
+except Exception:
+        return False # if anything crashes, return False
     
     
     """
@@ -29,9 +39,19 @@ class Query:
     # Return True upon succesful insertion
     # Returns False if insert fails for whatever reason
     """
-    def insert(self, *columns):
+    def insert(self, *columns): # naomi
         schema_encoding = '0' * self.table.num_columns
-        pass
+        try:
+            # call table's insert method, returns RID on success or False on failure
+            rid = self.table.insert(list(columns))
+            if rid is not False and rid is not None: # see if insert successful
+                key_value = columns[self.table.key] # primary key values from columns
+                self.table.index.indices[self.table.key][key_value] = rid # Adds an entry to the B-Tree index
+                return True
+            else: # insert failed return False
+                return False
+        except Exception: # crash return false
+            return False
 
     
     """
@@ -43,8 +63,33 @@ class Query:
     # Returns False if record locked by TPL
     # Assume that select will never be called on a key that doesn't exist
     """
-    def select(self, search_key, search_key_index, projected_columns_index):
-        pass
+    def select(self, search_key, search_key_index, projected_columns_index): # naomi
+        try: # use Btree to find all RIDs with search_key value
+            matching_rids = self.table.index.locate(search_key_index, search_key)
+            if not matching_rids:
+                return False
+            # store list of record objects
+            results = []
+            for rid in matching_rids: #go through each matching rid
+                if rid not in self.table.page_directory: # self.table.page_directory from table.py insert function
+                    continue
+                page_index, offset = self.table.page_directory[rid] # location of page for rid
+                columns = [] 
+                # reads all column values for a record and stores them in a list
+                for col in range(self.table.num_columns):
+                    # note: L-Store is columnar storage (each column has its own set of pgs)
+                    page = self.table.base_pages[col][page_index] # ex: base_pages[0][0] = first page of column 0
+                    value = page.read(offset) # offset = position in bytes = record_position * RECORD_SIZE (from page.py)
+                    columns.append(value)
+                # get primary key value from columns list
+                key_value = columns[self.table.key] 
+                # create a Record object with (rid, key, columns)
+                record = Record(rid, key_value, columns) 
+                results.append(record)
+            # return list of Record objects if found, False if empty
+                return results if results else False
+        except Exception:
+            return False
 
     
     """
