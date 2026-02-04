@@ -7,13 +7,18 @@ class Index:
     def __init__(self, table):
         # One index for each table. All our empty initially.
         self.indices = [None] *  table.num_columns
+        #Alvin: This makes primary key column into a Btree for indexing
+        self.indices[table.key] = OOBTree()
         pass
 
     """
     # returns the location of all records with the given value on column "column"
     """
-
+    #Alvin: (WORK IN PROGRESS)
     def locate(self, column, value):
+        #self.indices[column]
+        #if value in self.indices[columns]:
+            #return 
         pass
 
     """
