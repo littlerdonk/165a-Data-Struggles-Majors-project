@@ -5,4 +5,4 @@
 PAGE_SIZE = 4096 #
 RECORD_SIZE = 8
 #Alvin wrote this to make it easier to find primary column
-META_DATA_COLUMN_NUM = 5
+META_DATA_COLUMN_SIZE = 5
