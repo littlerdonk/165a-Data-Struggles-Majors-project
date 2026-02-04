@@ -4,7 +4,7 @@ class Page:
     def __init__(self, capacity = None):
         self.num_records = 0 # Nicholas
         self.data = bytearray(PAGE_SIZE)
-        if capacity = None: # Sage 
+        if capacity is None: # Sage 
             self.capacity = PAGE_SIZE // RECORD_SIZE # 512 records for a 4kb page
         else: 
             self.capacity = capacity
@@ -31,7 +31,7 @@ class Page:
         #Read a value from the page at the given offset.
         #Returns the integer value stored at that offset.
         value_bytes = self.data[offset:offset + RECORD_SIZE]
-        value = int.from_bytes(value_bytes, byterorder = 'big', signed=True)
+        value = int.from_bytes(value_bytes, byteorder = 'big', signed=True)
         return value 
 
     def update(self, offset, value): 
@@ -40,7 +40,7 @@ class Page:
         if value is None: 
             value = 0 
 
-        self.data[offser:offset + RECORD_SIZE] = value .to_byters(RECORD_SIZE, byteorder'big', signed=True)
+        self.data[offset:offset + RECORD_SIZE] = value .to_byters(RECORD_SIZE, byteorder'big', signed=True)
 
 
     def get_num_records(self):
