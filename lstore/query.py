@@ -30,7 +30,9 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns):
-        schema_encoding = '0' * self.table.num_columns
+        schema_encoding = '0' * self.table.num_columns # Iris
+        # Appending this to the end of the table? 
+        # wouldn't this just be self.table.insert(columns)
         pass
 
     
@@ -66,7 +68,18 @@ class Query:
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
-    def update(self, primary_key, *columns):
+    def update(self, primary_key, *columns): # Iris
+        # Idea??
+        # 1. Connect to the table (find rid from primary_key)
+        #    rid = self.rid(primary_key)???
+        #     self.table.update(rid, columns)
+        # Check if columns at specified key exist --> Return false if not
+        # Check if target record is locked --> If locked, can not access --> Return false
+        # Other wise:
+        # 2. Update
+        # lwk not sure if im supposed to be calling the table update function or just write one here?
+        # Call the row using primary_key and update the record with the columns array --> columns array should be specifying which columns to update right? Other wise its 0?
+        # do i need to do smth with the schema encoding here or is that done in table??
         pass
 
     
