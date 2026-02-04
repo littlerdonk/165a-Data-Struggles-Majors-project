@@ -32,7 +32,7 @@ class Table:
         self.key = key
         self.num_columns = num_columns
         self.page_directory = {}
-        self.index = Index(self, key)
+        self.index = Index(self)
         self.merge_threshold_pages = 50  # The threshold to trigger a merge
         self.rid = 0
         self.base_pages = [[] for col in range(self.num_columns)] # we should add a way to import data from Page.py
