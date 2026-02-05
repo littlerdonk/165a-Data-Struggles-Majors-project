@@ -78,13 +78,30 @@ class Table:
     def update(self, rid, values): # Sage 
         #get current Values from base or any existing tails 
         current_record = self.get_record(rid) 
+        
+        base_range_index, base_offset = self.page_directory[rid]
+        
+        base_pages = self.base_pages[base_range_index]
+        
+        old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
+        
+        current_record = self.get_record(rid)
+        
+        tail_columns = current_record.columns.copy()
+        
         #get current tail pages
+        for col, value in enumerate(columns):# iterativly apply updates through columns 
+            if value is not None:
+                tail_columns[col] = value
+                
         tail_pages = self.get_current_tail_pages()
+        #Finish FINISH FINISH 
+        
         #create new tail RID 
         tail_rid = self.next_rid 
         self.next_rid  += 1
         
-        if rid not in self.page_directory:
+        if rid not in self.page_directory:#check if its not in the page directory 
             return False
         # Get location
         page_index, offset = self.page_directory[rid]
@@ -120,33 +137,37 @@ class Table:
     def new_tail_page_range(self):#Sage 
          #create tail page range
         page_range = [] 
-        for _ in range(self.total_columns): 
-            page_range.append(Page(capacity=512))
-        self.tail_pages.append(page_range)
-        self.current_tail_range_index = len(self.tail_pages) - 1
+        for _ in range(self.total_columns): #iterate through every column
+            page_range.append(Page(capacity=512))# make new columns 
+        self.tail_pages.append(page_range)#append to tail pages 
+        self.current_tail_range_index = len(self.tail_pages) - 1 # increase tail range index by one 
         
             
-    def get_current_tail_pages(self):
+    def get_current_tail_pages(self):#Sage 
         #get current tail page range and create if needed
-        if self.current_tail_range_index < 0 :
-            self.new_tail_page_range()
-        current_pages = self.tail_pages[self.current_tail_range_index]
-        if not current_pages[0].has_capacity():
+        if self.current_tail_range_index < 0 :# if this is the first page
+            self.new_tail_page_range()# make new page range
+        current_pages = self.tail_pages[self.current_tail_range_index]#add index range page to current pages
+        if not current_pages[0].has_capacity():#check capacity and add if needed 
             self.new_tail_page_range()
             current_pages = self.tail_pages[self.current_tail_range_index]
         return current_pages
 
     def get_record(self, rid):#incomplete
-        if rid in self.page_directory:
-            base_range_index, base_offset = self.page_directory[rid]
-            base_pages = self.base_pages[base_range_index]
-            indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)
+        if rid in self.page_directory:#in the page directory 
+            base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
+            base_pages = self.base_pages[base_range_index]# add to base page 
+            indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
             columns = []
-            for col in range(4,self.total_columns):
-                value = base_pages[col].read(base_offset)
-                columns.append(value)
+            for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
+                value = base_pages[col].read(base_offset)#grab value from the read of the offset
+                columns.append(value)#append it to columns 
+            if indirection != 0: #has direction
+                columns = self.tail_update(columns, indirection)#FIX FIX FIX 
+            key = columns[self.key] # set Key to make record with Key value stored
+            return Record(rid, key, columns) #return the full record 
         else:
-            return None
+            return None#not in the page directory
             
     def get_rid(self, rid): # Sage
         return Record(rid, key, columns)
