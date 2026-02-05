@@ -22,11 +22,14 @@ class Index:
     """
     # returns the location of all records with the given value on column "column"
     """
-    #Alvin: (WORK IN PROGRESS)
+    #Alvin: Example of how it works
+    #locate(2, 100) for example, go to column two, and grab all records who have a the value 100 
+    #Make sure to get the RID -> self.indices[column][value] = [rid1, rid2, rid3...]
     def locate(self, column, value):
-        #self.indices[column]
-        #if value in self.indices[columns]:
-            #return 
+        if self.indices[column].has_key(value):
+            return self.indices[column][value]  
+        else:
+            return []
         pass
 
     """
