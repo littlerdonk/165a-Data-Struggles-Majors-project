@@ -47,21 +47,17 @@ class Table:
     
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:
-            rid = self.rid
-            self.rid += 1
+            
             #find the page to insert into using the first to check capacity 
-            page_index = 0 
-            current_page = self.base_pages[0][page_index]
             current_pages = self.base_pages[self.current_base_range_index]
             #check capacity
             if not current_pages[0].has_capacity():
                 self.new_base_page_range()
                 current_pages = self.base_pages[self.current_base_range_index]
-        
-            #check for full capacity and create new pages for all columns if full 
-            if not current_page.has_capacity():
-                page_index = len(self.base_pages[0])
-                for col in range(self.num_columns):self.base_pages[col].append(Page(capacity=512))
+                
+            rid = self.rid
+            self.rid += 1
+                
                     
             # Insert the value into each column's page
             all_columns = [0, rid, int(time()), 0] + list(values)
@@ -76,17 +72,19 @@ class Table:
 
     
     def update(self, rid, values): # Sage 
+        if rid not in self.page_directory:#check if its not in the page directory 
+            return False
         #get current Values from base or any existing tails 
         current_record = self.get_record(rid) 
-        
+        # get base range index and base offset from the page directory 
         base_range_index, base_offset = self.page_directory[rid]
-        
+        # get base pages from the range index
         base_pages = self.base_pages[base_range_index]
-        
+        # store the old direction 
         old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
-        
+        #get the current record via the RID
         current_record = self.get_record(rid)
-        
+        #store a copy of current record into tail columns 
         tail_columns = current_record.columns.copy()
         
         #get current tail pages
@@ -95,14 +93,26 @@ class Table:
                 tail_columns[col] = value
                 
         tail_pages = self.get_current_tail_pages()
-        #Finish FINISH FINISH 
         
         #create new tail RID 
         tail_rid = self.next_rid 
         self.next_rid  += 1
-        
+
+        # schema encoding calculation
+        schema_encoding = 0
+        for i, val in enumerate(columns):
+            if val is not None:
+                schema_encoding += (1 << i)# reads the value of i as a bit map
+
+        all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns
+        #do the update
+        tail offset = None 
+        for col, value in enumerate(all_columns): 
+            tail_offset = tail_pages[col].write(value)
+            
         if rid not in self.page_directory:#check if its not in the page directory 
             return False
+            
         # Get location
         page_index, offset = self.page_directory[rid]
         
@@ -111,6 +121,10 @@ class Table:
             if values[col] is not None:  # Only update non-None values
                 page = self.base_pages[col][page_index]
                 page.update(offset, values[col])
+        #store tail in directory 
+        self.page_directory[tail_rid] = (self.current_tail_range_index, tail_offset)
+        #update base indirection 
+        base_pages[INDIRECTION_COLUMN].update(base_offset, tail_rid)
         
         return True
         
@@ -163,12 +177,28 @@ class Table:
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
             if indirection != 0: #has direction
-                columns = self.tail_update(columns, indirection)#FIX FIX FIX 
+                columns = self.tail_update(columns, indirection)#take all the columns and the in direction to update tail
             key = columns[self.key] # set Key to make record with Key value stored
             return Record(rid, key, columns) #return the full record 
         else:
             return None#not in the page directory
             
+    def tail_update(self, base_columns, tail_rid):# sage 
+        #updates the tail pages using in get record
+        if tail_rid == 0 or tail_rid not in self.page_directory:#checks if the rid exists and is not 0 
+        return base_columns
+    
+    tail_range_index, tail_offset = self.page_directory[tail_rid]#grab the range index and tail offset from the directory via RID
+    tail_pages = self.tail_pages[tail_range_index]#grab tail pages from the range index
+    
+    updated_columns = []
+    for col in range(4, self.total_columns):#iterate through each column in total columsn 
+        value = tail_pages[col].read(tail_offset)# read values from tail offset and set into values
+        updated_columns.append(value)# store updated values 
+    
+    return updated_columns
+    
+        
     def get_rid(self, rid): # Sage
         return Record(rid, key, columns)
 
