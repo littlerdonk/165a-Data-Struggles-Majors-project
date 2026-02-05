@@ -8,9 +8,17 @@ class Index:
         # One index for each table. All our empty initially.
         self.indices = [None] *  table.num_columns
         #Alvin: This makes primary key column into a Btree for indexing
+        self.table = table
         self.indices[table.key] = OOBTree()
         pass
 
+    #Alvin: adding an insert function for the b-tree that appends values instead of replaces, this way keys (column values) can refer to multiple values (multiple RIDS)
+    def insert_btree(self, column, key, value):
+        btree = self.indices[column]
+        if btree.has_key(key):
+            btree[key].append(value)
+        else:
+            btree[key] = [value]
     """
     # returns the location of all records with the given value on column "column"
     """
