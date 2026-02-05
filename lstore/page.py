@@ -20,7 +20,7 @@ class Page:
             if value is None: 
                 value = 0
                 #stores data as a 64-bit integer
-            self.data[offset + RECORD_SIZE] = value.to_bytes(RECORD_SIZE, byteorder='big', signed=True)
+            self.data[offset:offset + RECORD_SIZE] = value.to_bytes(RECORD_SIZE, byteorder='big', signed=True)
             self.num_records += 1  # Nicholas
             return offset 
         else:
@@ -40,7 +40,7 @@ class Page:
         if value is None: 
             value = 0 
 
-        self.data[offset:offset + RECORD_SIZE] = value .to_byters(RECORD_SIZE, byteorder'big', signed=True)
+        self.data[offset:offset + RECORD_SIZE] = value.to_byters(RECORD_SIZE, byteorder'big', signed=True)
 
 
     def get_num_records(self):
