@@ -112,6 +112,20 @@ except Exception:
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
     def update(self, primary_key, *columns):
+        #try:
+            # get rid from self.table using primary key
+            # if rid not found --> return false
+            # convert inputted *columns into values
+            # iterate through the columns and update values based on input
+            # Call self.table.update(rid, values)
+            # When updating I need to update:
+            #     - Schema Encoding (change to 1 if the column was altered)
+            #     - Create tail page with new tail page rid?
+            #     - update indirection column in base page? (not sure if this is done in page.py actually)
+            #     - Update the actual values in the records
+            # If all of the above is successful this should return true
+        #except:
+            #return False
         pass
 
     
@@ -124,6 +138,15 @@ except Exception:
     # Returns False if no record exists in the given range
     """
     def sum(self, start_range, end_range, aggregate_column_index):
+        # Find the record id based on the inputted index:
+        # matching_rids = self.table.index.locate(aggregate_column_index)
+        # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
+        #     For key in (start_range to end_range):
+        #         If no duplicates of primary key (if a student has multiple entries in the record?):
+        #             sum += 1
+        # return sum
+        # except:
+        #     return False
         pass
 
     
