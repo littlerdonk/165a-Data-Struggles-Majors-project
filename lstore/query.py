@@ -111,10 +111,17 @@ except Exception:
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
-    def update(self, primary_key, *columns):
-        #try:
+    def update(self, primary_key, *columns): # Iris
+        try:
             # get rid from self.table using primary key
             # if rid not found --> return false
+            matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
+
+            updating = self.table.update(matching_rid, columns)
+            if updating:
+                return True
+            else:
+                return False
             # convert inputted *columns into values
             # iterate through the columns and update values based on input
             # Call self.table.update(rid, values)
@@ -124,8 +131,8 @@ except Exception:
             #     - update indirection column in base page? (not sure if this is done in page.py actually)
             #     - Update the actual values in the records
             # If all of the above is successful this should return true
-        #except:
-            #return False
+        except:
+            return False
         pass
 
     
@@ -137,7 +144,7 @@ except Exception:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
-    def sum(self, start_range, end_range, aggregate_column_index):
+    def sum(self, start_range, end_range, aggregate_column_index): # Iris
         # Find the record id based on the inputted index:
         # matching_rids = self.table.index.locate(aggregate_column_index)
         # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
