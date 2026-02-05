@@ -36,7 +36,15 @@ class Table:
         self.merge_threshold_pages = 50  # The threshold to trigger a merge
         self.rid = 0
         self.base_pages = [[] for col in range(self.num_columns)] # we should add a way to import data from Page.py
+        self.total_columns = 4 + num_columns 
+        self.tail_pages = []
+        self.current_tail_range_index = -1
+        self.current_base_range_index = -1
+        self.next_rid = 0
 
+        self.new_base_page_range()
+
+    
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:
             rid = self.rid
@@ -44,25 +52,38 @@ class Table:
             #find the page to insert into using the first to check capacity 
             page_index = 0 
             current_page = self.base_pages[0][page_index]
-            
+            current_pages = self.base_pages[self.current_base_range_index]
+            #check capacity
+            if not current_pages[0].has_capacity():
+                self.new_base_page_range()
+                current_pages = self.base_pages[self.current_base_range_index]
+        
             #check for full capacity and create new pages for all columns if full 
             if not current_page.has_capacity():
                 page_index = len(self.base_pages[0])
                 for col in range(self.num_columns):self.base_pages[col].append(Page(capacity=512))
                     
             # Insert the value into each column's page
+            all_columns = [0, rid, int(time()), 0] + list(values)
             offset = None 
-            for col in range(self.num_columns):
-                page = self.base_pages[col][page_index]
-                offset = page.write(values[col])
+            for col, in value in enumerate(all_columns):
+                offset = current_pages[col].write(value)
 
-            self.page_directory[rid] = (page_index, offset)
+            self.page_directory[rid] = (self.current_base_range_index, offset)
             return rid 
         else:
             return False
 
     
     def update(self, rid, values): # Sage 
+        #get current Values from base or any existing tails 
+        current_record = self.get_record(rid) 
+        #get current tail pages
+        tail_pages = self.get_current_tail_pages()
+        #create new tail RID 
+        tail_rid = self.next_rid 
+        self.next_rid  += 1
+        
         if rid not in self.page_directory:
             return False
         # Get location
@@ -88,6 +109,45 @@ class Table:
         else:
             print("RID Not Found in Page Directory")
 
+    def new_base_page_range(self):#Sage 
+        # create page range
+        page_range = [] 
+        for _ in range(self.total_columns): #iterate through every column
+            page_range.append(Page(capacity=512))#make new pages
+        self.base_pages.append(page_range)#append that to the base page
+        self.current_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
+            
+    def new_tail_page_range(self):#Sage 
+         #create tail page range
+        page_range = [] 
+        for _ in range(self.total_columns): 
+            page_range.append(Page(capacity=512))
+        self.tail_pages.append(page_range)
+        self.current_tail_range_index = len(self.tail_pages) - 1
+        
+            
+    def get_current_tail_pages(self):
+        #get current tail page range and create if needed
+        if self.current_tail_range_index < 0 :
+            self.new_tail_page_range()
+        current_pages = self.tail_pages[self.current_tail_range_index]
+        if not current_pages[0].has_capacity():
+            self.new_tail_page_range()
+            current_pages = self.tail_pages[self.current_tail_range_index]
+        return current_pages
+
+    def get_record(self, rid):#incomplete
+        if rid in self.page_directory:
+            base_range_index, base_offset = self.page_directory[rid]
+            base_pages = self.base_pages[base_range_index]
+            indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)
+            columns = []
+            for col in range(4,self.total_columns):
+                value = base_pages[col].read(base_offset)
+                columns.append(value)
+        else:
+            return None
+            
     def get_rid(self, rid): # Sage
         return Record(rid, key, columns)
 
