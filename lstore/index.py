@@ -24,8 +24,12 @@ class Index:
     """
     # Returns the RIDs of all records with values in column "column" between "begin" and "end"
     """
-
-    def locate_range(self, begin, end, column):
+    # I think I need this for sum()?
+    def locate_range(self, begin, end, column): # Iris??
+        # rid_list = []
+        # for value, rid in self.indices[column][begin:end]:
+            # rid_list.append(rid)
+        #return rid_list
         pass
 
     """
