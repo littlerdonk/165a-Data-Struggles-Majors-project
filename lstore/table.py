@@ -106,7 +106,7 @@ class Table:
 
         all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns
         #do the update
-        tail offset = None 
+        tail_offset = None 
         for col, value in enumerate(all_columns): 
             tail_offset = tail_pages[col].write(value)
             
@@ -186,17 +186,17 @@ class Table:
     def tail_update(self, base_columns, tail_rid):# sage 
         #updates the tail pages using in get record
         if tail_rid == 0 or tail_rid not in self.page_directory:#checks if the rid exists and is not 0 
-        return base_columns
+            return base_columns
     
-    tail_range_index, tail_offset = self.page_directory[tail_rid]#grab the range index and tail offset from the directory via RID
-    tail_pages = self.tail_pages[tail_range_index]#grab tail pages from the range index
+        tail_range_index, tail_offset = self.page_directory[tail_rid]#grab the range index and tail offset from the directory via RID
+        tail_pages = self.tail_pages[tail_range_index]#grab tail pages from the range index
     
-    updated_columns = []
-    for col in range(4, self.total_columns):#iterate through each column in total columsn 
-        value = tail_pages[col].read(tail_offset)# read values from tail offset and set into values
-        updated_columns.append(value)# store updated values 
+        updated_columns = []
+        for col in range(4, self.total_columns):#iterate through each column in total columsn 
+            value = tail_pages[col].read(tail_offset)# read values from tail offset and set into values
+            updated_columns.append(value)# store updated values 
     
-    return updated_columns
+        return updated_columns
     
         
     def get_rid(self, rid): # Sage
