@@ -35,13 +35,13 @@ class Index:
     """
     # Returns the RIDs of all records with values in column "column" between "begin" and "end"
     """
-    # I think I need this for sum()?
-    def locate_range(self, begin, end, column): # Iris??
-        # rid_list = []
-        # for value, rid in self.indices[column][begin:end]:
-            # rid_list.append(rid)
-        #return rid_list
-        pass
+    # Alvin: will return all RID (not in order but from records with values closer to begin first then to end)
+    def locate_range(self, begin, end, column):
+        valuesExist = list(self.indices[column].keys(min=begin, max=end))
+        RIDList = []
+        for eachValue in valuesExist:
+            RIDList.extend(self.indices[column][eachValue])
+        return RIDList
 
     """
     # optional: Create index on specific column
