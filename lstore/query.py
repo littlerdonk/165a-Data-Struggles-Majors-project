@@ -40,6 +40,7 @@ except Exception:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns): # naomi
+        # tracks updated columns (will be used in milestone 2)
         schema_encoding = '0' * self.table.num_columns
         try:
             # call table's insert method, returns RID on success or False on failure
