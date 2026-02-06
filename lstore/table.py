@@ -11,12 +11,12 @@ SCHEMA_ENCODING_COLUMN = 3
 class Record:
 
     def __init__(self, rid, key, columns):
-        self.rid = rid
-        self.key = key
-        self.indirection = None 
+        self.rid = rid 
+        self.key = key 
+        self.indirection = None #set to None 
         self.schema_encoding = 0 
-        self.start_time = None
-        self.last_updated_time = None
+        self.start_time = None # set later in insert and update 
+        self.last_updated_time = None #set in update
         self.columns = columns
         
 
@@ -31,22 +31,22 @@ class Table:
         self.name = name
         self.key = key
         self.num_columns = num_columns
-        self.page_directory = {}
+        self.page_directory = {} # dictionary to store data and offset under RIDS
         self.index = Index(self)
-        self.merge_threshold_pages = 50  # The threshold to trigger a merge
+        self.merge_threshold_pages = 50  # The threshold to trigger a merge: M2 
         self.rid = 0
         self.base_pages = []
         self.total_columns = 4 + num_columns 
         self.tail_pages = []
-        self.current_tail_range_index = -1
-        self.current_base_range_index = -1
+        self.current_tail_range_index = -1 # the greater range index for base pages
+        self.current_base_range_index = -1 # the greater range index for base pages
         self.next_rid = 0
 
-        self.new_base_page_range()
+        self.new_base_page_range()# make the first base page range / book 
 
     
     def insert(self, values): # Nicholas & Sage 
-        if len(values) == self.num_columns:
+        if len(values) == self.num_columns:#check 
             
             #find the page to insert into using the first to check capacity 
             current_pages = self.base_pages[self.current_base_range_index]
@@ -89,7 +89,7 @@ class Table:
         tail_columns = current_record.columns.copy()
         
         #get current tail pages
-        for col, data in enumerate(value):# iterativly apply updates through columns 
+        for col, data in enumerate(values):# iterativly apply updates through columns 
             if data is not None:#if data is not not 
                 tail_columns[col] = data#add data to tail columns 
                 
