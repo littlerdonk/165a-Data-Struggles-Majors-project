@@ -40,7 +40,7 @@ class Page:
         if value is None: 
             value = 0 
 
-        self.data[offset:offset + RECORD_SIZE] = value.to_byters(RECORD_SIZE, byteorder'big', signed=True)
+        self.data[offset:offset + RECORD_SIZE] = value.to_bytes(RECORD_SIZE, byteorder'big', signed=True)
 
 
     def get_num_records(self):
