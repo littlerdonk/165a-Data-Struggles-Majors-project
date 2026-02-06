@@ -141,7 +141,14 @@ except Exception:
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
         # Find the record id based on the inputted index:
-        # matching_rids = self.table.index.locate(aggregate_column_index)
+        try:
+            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # assuming the inputs are valid
+            sum_range = 0
+            for rid in matching_rids:
+                sum += self.table.get_record(rid)
+            return sum_range
+        except:
+            return False
         # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
         #     For key in (start_range to end_range):
         #         If no duplicates of primary key (if a student has multiple entries in the record?):
@@ -149,7 +156,6 @@ except Exception:
         # return sum
         # except:
         #     return False
-        pass
 
     
     """
@@ -161,8 +167,11 @@ except Exception:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
-    def sum_version(self, start_range, end_range, aggregate_column_index, relative_version):
-        pass
+    def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
+        try:
+            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # uhh working progress...
+        except:
+            return False
 
     
     """
