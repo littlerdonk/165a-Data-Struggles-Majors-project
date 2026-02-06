@@ -35,7 +35,7 @@ class Table:
         self.index = Index(self)
         self.merge_threshold_pages = 50  # The threshold to trigger a merge
         self.rid = 0
-        self.base_pages = [[] for col in range(self.num_columns)] # we should add a way to import data from Page.py
+        self.base_pages = []
         self.total_columns = 4 + num_columns 
         self.tail_pages = []
         self.current_tail_range_index = -1
@@ -62,7 +62,7 @@ class Table:
             # Insert the value into each column's page
             all_columns = [0, rid, int(time()), 0] + list(values)
             offset = None 
-            for col, in value in enumerate(all_columns):
+            for col, value in enumerate(all_columns):
                 offset = current_pages[col].write(value)
 
             self.page_directory[rid] = (self.current_base_range_index, offset)
@@ -81,14 +81,14 @@ class Table:
         # get base pages from the range index
         base_pages = self.base_pages[base_range_index]
         # store the old direction 
-        old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
+        old_indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)
         #get the current record via the RID
         current_record = self.get_record(rid)
         #store a copy of current record into tail columns 
         tail_columns = current_record.columns.copy()
         
         #get current tail pages
-        for col, value in enumerate(columns):# iterativly apply updates through columns 
+        for col, value in enumerate(values):# iterativly apply updates through columns 
             if value is not None:
                 tail_columns[col] = value
                 
@@ -100,7 +100,7 @@ class Table:
 
         # schema encoding calculation
         schema_encoding = 0
-        for i, val in enumerate(columns):
+        for i, val in enumerate(values):
             if val is not None:
                 schema_encoding += (1 << i)# reads the value of i as a bit map
 
@@ -131,14 +131,18 @@ class Table:
 
         
     def delete(self, rid): # Nicholas
+        #deletes base page as well as tail pages of record associated with rid
         if rid in self.page_directory:
+            # Locates slot including base page range and offset with rid in page directory
             location = self.page_directory[rid]
-            for col in range(self.num_columns):
-                page = self.base_pages[location[0]]
-                page.values[location[1]] = None
-            return
+            # Locates page range of desired slot
+            base_pages = self.base_pages[location[0]]
+            # Updates indirection column of slot with -1 to denote that the slot has been deleted
+            base_pages[INDIRECTION_COLUMN].update(location[1], -1)
+            return True
         else:
-            print("RID Not Found in Page Directory")
+            return False
+
 
     def new_base_page_range(self):#Sage 
         # create page range
@@ -176,10 +180,12 @@ class Table:
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
-            if indirection != 0: #has direction
+            if indirection > 0: #has direction
                 columns = self.tail_update(columns, indirection)#take all the columns and the in direction to update tail
+            if indirection == -1: # record has been deleted
+                return None
             key = columns[self.key] # set Key to make record with Key value stored
-            return Record(rid, key, columns) #return the full record 
+            return Record(rid, key, columns) #return the full record
         else:
             return None#not in the page directory
             
