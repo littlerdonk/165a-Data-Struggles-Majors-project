@@ -72,23 +72,17 @@ except Exception:
             # store list of record objects
             results = []
             for rid in matching_rids: #go through each matching rid
-                if rid not in self.table.page_directory: # self.table.page_directory from table.py insert function
+                # table's get_record method from table.py to get the full Record object
+                record = self.table.get_record(rid)
+                if record is None: #skip if record dne or is none
                     continue
-                page_index, offset = self.table.page_directory[rid] # location of page for rid
-                columns = [] 
-                # reads all column values for a record and stores them in a list
-                for col in range(self.table.num_columns):
-                    # note: L-Store is columnar storage (each column has its own set of pgs)
-                    page = self.table.base_pages[col][page_index] # ex: base_pages[0][0] = first page of column 0
-                    value = page.read(offset) # offset = position in bytes = record_position * RECORD_SIZE (from page.py)
-                    columns.append(value)
-                # get primary key value from columns list
-                key_value = columns[self.table.key] 
-                # create a Record object with (rid, key, columns)
-                record = Record(rid, key_value, columns) 
                 results.append(record)
-            # return list of Record objects if found, False if empty
-                return results if results else False
+        
+            # if we found records, return them; return false if not
+            if results:
+                return results
+            else:
+                return False
         except Exception:
             return False
 
