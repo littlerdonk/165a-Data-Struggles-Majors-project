@@ -168,8 +168,20 @@ except Exception:
     # Returns False if no record exists in the given range
     """
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
+        # WORKING PROGRESS
         try:
-            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # uhh working progress...
+            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) 
+            # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
+            sum = 0
+            for rid in matching_rids:
+                # check if there is a previous version (if the rid has not been updated there wouldn't be one)
+                if self.table.get_record(rid).indirection == None:
+                    sum += self.table.get_record(rid)
+                else:
+                    tail_rid = self.table.get_record(rid).indirection
+                    # The idea is to get the tail rid and then locate the record in the tail page, then minus the tail_rid by the relative version 
+                    # To get the RID of the desired version
+                    # Then sum up those values as intended
         except:
             return False
 
