@@ -40,12 +40,12 @@ except Exception:
     # Returns False if insert fails for whatever reason
     """
     def insert(self, *columns): # naomi
-        # tracks updated columns (will be used in milestone 2)
+        # tracks updated columns (will be used in milestone 2); function takes just the column values, not schema encoding
         schema_encoding = '0' * self.table.num_columns
         try:
             # call table's insert method, returns RID on success or False on failure
             rid = self.table.insert(list(columns))
-            if rid is not False and rid is not None: # see if insert successful
+            if rid: # see if insert successful
                 key_value = columns[self.table.key] # primary key values from columns
                 self.table.index.indices[self.table.key][key_value] = rid # Adds an entry to the B-Tree index
                 return True
