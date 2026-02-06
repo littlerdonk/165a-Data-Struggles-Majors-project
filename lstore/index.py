@@ -49,13 +49,16 @@ class Index:
     """
     # optional: Create index on specific column
     """
-
+    #Note that primary key is already made in initialization
     def create_index(self, column_number):
-        pass
-
+        #creates the bTree for that column
+        self.indices[column_number] = OOBTree()
+        return True
     """
     # optional: Drop index of specific column
     """
 
     def drop_index(self, column_number):
-        pass
+        #reset that index back to none
+        self.indices[column_number] = None
+        return True
