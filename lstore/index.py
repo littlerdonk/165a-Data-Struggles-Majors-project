@@ -40,8 +40,11 @@ class Index:
         validRIDs = []
         #removes the lists format so only RID values are inputed into the list
         for value in valuesWithinRange:
-            validRIDs.extend(self.indices[column][value])
-        return validRIDs
+            validRIDs.append(self.indices[column][value])
+        validRIDsNoBrackets = []
+        for value in validRIDs:
+            validRIDsNoBrackets.extend(value)
+        return validRIDsNoBrackets
 
     """
     # optional: Create index on specific column
