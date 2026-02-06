@@ -89,9 +89,9 @@ class Table:
         tail_columns = current_record.columns.copy()
         
         #get current tail pages
-        for col, value in enumerate(values):# iterativly apply updates through columns 
-            if value is not None:
-                tail_columns[col] = value
+        for col, data in enumerate(value):# iterativly apply updates through columns 
+            if data is not None:#if data is not not 
+                tail_columns[col] = data#add data to tail columns 
                 
         tail_pages = self.get_current_tail_pages()
         
@@ -105,23 +105,20 @@ class Table:
             if val is not None:
                 schema_encoding += (1 << i)# reads the value of i as a bit map
 
-        all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns
+        all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns# create all columns wit metadata and tail_columsn
         #do the update
-        tail_offset = None 
-        for col, value in enumerate(all_columns): 
-            tail_offset = tail_pages[col].write(value)
-            
-        if rid not in self.page_directory:#check if its not in the page directory 
-            return False
+        tail_offset = None #set offset to none to update after adding page for speed
+        for col, value in enumerate(all_columns): #enumerate through all columns metadata
+            tail_offset = tail_pages[col].write(value)#update offset to point ot latest page
             
         # Get location
         page_index, offset = self.page_directory[rid]
         
         # update each column
         for col in range(self.num_columns):
-            if values[col] is not None:  # Only update non-None values
-                page = self.base_pages[col][page_index]
-                page.update(offset, values[col])
+            if columns[col] is not None:  # Only update non-None values
+                page = self.base_pages[page_index][]col + 4] #change 4 with META DATA Config 
+                page.update(offset, columns[col])
         #store tail in directory 
         self.page_directory[tail_rid] = (self.current_tail_range_index, tail_offset)
         #update base indirection 
@@ -132,16 +129,20 @@ class Table:
 
         
     def delete(self, rid): # Nicholas
+        
         #deletes base page as well as tail pages of record associated with rid
-        if rid in self.page_directory:
-            # Locates slot including base page range and offset with rid in page directory
-            location = self.page_directory[rid]
-            # Locates page range of desired slot
-            base_pages = self.base_pages[location[0]]
-            # Updates indirection column of slot with -1 to denote that the slot has been deleted
-            base_pages[INDIRECTION_COLUMN].update(location[1], -1)
+        #FIX BY Sage to include support for tail files and Btree Indexing 
+        if rid in self.page_directory:#check if the RID exists in page directory
+             # Locates slot including base page range and offset with rid in page directory
+            location, offset = self.page_directory[rid]#Update Sage adds offset and index to location search 
+            for col in range(self.total_columns):# iterate through self.total columns 
+                page = self.base_pages[location][col]#find the page requested
+                page.update(offset, None)#update to None from the offset which deletes the entry 
+            del self.page_directory[rid]#delete rid from page directory 
             return True
+           
         else:
+            print("RID Not Found in Page Directory")#not found in page directory 
             return False
 
 
