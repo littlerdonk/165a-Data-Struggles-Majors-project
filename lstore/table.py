@@ -50,21 +50,22 @@ class Table:
             
             #find the page to insert into using the first to check capacity 
             current_pages = self.base_pages[self.current_base_range_index]
+            
             #check capacity
-            if not current_pages[0].has_capacity():
-                self.new_base_page_range()
-                current_pages = self.base_pages[self.current_base_range_index]
+            if not current_pages[0].has_capacity():#if there is no capacity 
+                self.new_base_page_range()#make a new page range
+                current_pages = self.base_pages[self.current_base_range_index]# updates current pages to point to new page range 
                 
             rid = self.rid
             self.rid += 1
                 
                     
             # Insert the value into each column's page
-            all_columns = [0, rid, int(time()), 0] + list(values)
-            offset = None 
-            for col, value in enumerate(all_columns):
-                offset = current_pages[col].write(value)
-
+            all_columns = [0, rid, int(time()), 0] + list(values) # this is the all column which stores [indirection, RID, time made, schema encoding] 
+            offset = None # reset offset 
+            for col, value in enumerate(all_columns):#iterate though each part of all columns and stores value and METADATA in col 
+                offset = current_pages[col].write(value) # constantly points to last datapoint in list
+            #store the range index and the offset to the page directory 
             self.page_directory[rid] = (self.current_base_range_index, offset)
             return rid 
         else:
