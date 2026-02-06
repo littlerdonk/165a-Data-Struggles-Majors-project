@@ -11,7 +11,6 @@ class Index:
         #Alvin: This makes primary key column into a Btree for indexing
         self.table = table
         self.indices[table.key] = OOBTree()
-        pass
 
     #Alvin: adding an insert function for the b-tree that appends values instead of replaces, this way keys (column values) can refer to multiple values (multiple RIDS)
     def insert_btree(self, column, key, value):
@@ -31,18 +30,18 @@ class Index:
             return self.indices[column][value]  
         else:
             return []
-        pass
 
     """
     # Returns the RIDs of all records with values in column "column" between "begin" and "end"
     """
     # Alvin: will return all RID (not in order but from records with values closer to begin first then to end)
     def locate_range(self, begin, end, column):
-        valuesExist = list(self.indices[column].keys(min=begin, max=end))
-        RIDList = []
-        for eachValue in valuesExist:
-            RIDList.extend(self.indices[column][eachValue])
-        return RIDList
+        valuesWithinRange = list(self.indices[column].keys(min=begin, max=end))
+        validRIDs = []
+        #removes the lists format so only RID values are inputed into the list
+        for value in valuesWithinRange:
+            validRIDs.extend(self.indices[column][value])
+        return validRIDs
 
     """
     # optional: Create index on specific column
