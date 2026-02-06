@@ -113,19 +113,17 @@ except Exception:
             matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
 
             updating = self.table.update(matching_rid, columns)
+            # example:
+            # student_id = 12345
+            # updated_columns = [32, 88, 90, 30, 22] # every column wants to be updated in this case
+            # user calls update(student_id, updated_columns)
+            # matching_rid <- a list of rids of the columns found using primary key and index locate
+            # self.table.update(matching_rid, columns) should be going through each rid and updating the column with the specified values in updated_columns
+            # If that's successful this update() will return True
             if updating:
                 return True
             else:
                 return False
-            # convert inputted *columns into values
-            # iterate through the columns and update values based on input
-            # Call self.table.update(rid, values)
-            # When updating I need to update:
-            #     - Schema Encoding (change to 1 if the column was altered)
-            #     - Create tail page with new tail page rid?
-            #     - update indirection column in base page? (not sure if this is done in page.py actually)
-            #     - Update the actual values in the records
-            # If all of the above is successful this should return true
         except:
             return False
         pass
@@ -148,7 +146,7 @@ except Exception:
                 sum += self.table.get_record(rid)
             return sum_range
         except:
-            return False
+            return False # if inputs are invalid.
         # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
         #     For key in (start_range to end_range):
         #         If no duplicates of primary key (if a student has multiple entries in the record?):
@@ -172,16 +170,23 @@ except Exception:
         try:
             matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) 
             # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
-            sum = 0
+            sum_ver = 0
             for rid in matching_rids:
                 # check if there is a previous version (if the rid has not been updated there wouldn't be one)
                 if self.table.get_record(rid).indirection == None:
-                    sum += self.table.get_record(rid)
+                    sum_ver += self.table.get_record(rid)
                 else:
                     tail_rid = self.table.get_record(rid).indirection
+                    page_num, offset = self.table.page_directory(tail_rid)
                     # The idea is to get the tail rid and then locate the record in the tail page, then minus the tail_rid by the relative version 
                     # To get the RID of the desired version
                     # Then sum up those values as intended
+                    offset_desired = offset + relative_version
+                    # get the record ID of the new offset_desired version?
+                    tail_rid_desired = page_num, offset_desired # this part im confused on 
+                    record = self.table.get_record(tail_rid_desired)
+                    sum_ver += record
+            return sum_ver
         except:
             return False
 
