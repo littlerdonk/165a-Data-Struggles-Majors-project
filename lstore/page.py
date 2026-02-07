@@ -19,7 +19,7 @@ class Page:
             offset = self.num_records * RECORD_SIZE # Sage
             if value is None: 
                 value = 0
-                #stores data as a 64-bit integer
+                #stores data as a 64-bit integer from offset to end of record as bytes 
             self.data[offset:offset + RECORD_SIZE] = value.to_bytes(RECORD_SIZE, byteorder='big', signed=True)
             self.num_records += 1  # Nicholas
             return offset 
@@ -30,8 +30,8 @@ class Page:
         #Sage
         #Read a value from the page at the given offset.
         #Returns the integer value stored at that offset.
-        value_bytes = self.data[offset:offset + RECORD_SIZE]
-        value = int.from_bytes(value_bytes, byteorder = 'big', signed=True)
+        value_bytes = self.data[offset:offset + RECORD_SIZE]# grabs the data from the offset to the end of the record 
+        value = int.from_bytes(value_bytes, byteorder = 'big', signed=True)#changes value_bytes to ints and returns them 
         return value 
 
     def update(self, offset, value): 
