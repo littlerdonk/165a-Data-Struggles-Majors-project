@@ -176,16 +176,17 @@ except Exception:
                 if self.table.get_record(rid).indirection == None:
                     sum_ver += self.table.get_record(rid)
                 else:
-                    tail_rid = self.table.get_record(rid).indirection
-                    page_num, offset = self.table.page_directory(tail_rid)
-                    # The idea is to get the tail rid and then locate the record in the tail page, then minus the tail_rid by the relative version 
-                    # To get the RID of the desired version
-                    # Then sum up those values as intended
-                    offset_desired = offset + relative_version
-                    # get the record ID of the new offset_desired version?
-                    tail_rid_desired = page_num, offset_desired # this part im confused on 
-                    record = self.table.get_record(tail_rid_desired)
-                    sum_ver += record
+                    tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
+                    i = 0
+                    while i < abs(relative_version):
+                        tail_rid = self.table.get_record(tail_rid).indirection
+                        # Depending on the relative version, while loop goes back to previous versions using the tail page's indirection column
+                        # Ex: relative_version = -1
+                        # Functions within the loop execute once, we go to where the tail rid's indirection column is pointing to ONCE
+                        i += 1
+                    record_desired = self.table.get_record(tail_rid) # return the record of the desired version
+                    sum_ver += record_desired # add it to sum 
+                    
             return sum_ver
         except:
             return False
