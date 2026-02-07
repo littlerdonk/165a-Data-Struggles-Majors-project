@@ -15,7 +15,7 @@ class Record:
         self.key = key 
         self.indirection = None #set to None 
         self.schema_encoding = 0 
-        self.start_time = None # set later in insert and update 
+        self.start_time = None # setted later in insert and update 
         self.last_updated_time = None #set in update
         self.columns = columns
         
@@ -38,26 +38,26 @@ class Table:
         self.base_pages = []
         self.total_columns = 4 + num_columns 
         self.tail_pages = []
-        self.current_tail_range_index = -1 # the greater range index for base pages
-        self.current_base_range_index = -1 # the greater range index for base pages
+        self.cur_tail_range_index = -1 # the greater range index for base pages
+        self.cur_base_range_index = -1 # the greater range index for base pages
         self.next_rid = 0
 
-        self.new_base_page_range()# make the first base page range / book 
+        self.new_base_page_range()# make the first base page range 
 
     
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:#check 
             
             #find the page to insert into using the first to check capacity 
-            current_pages = self.base_pages[self.current_base_range_index]
+            current_pages = self.base_pages[self.cur_base_range_index]
             
             #check capacity
             if not current_pages[0].has_capacity():#if there is no capacity 
                 self.new_base_page_range()#make a new page range
-                current_pages = self.base_pages[self.current_base_range_index]# updates current pages to point to new page range 
+                current_pages = self.base_pages[self.cur_base_range_index]# updates current pages to point to new page range 
                 
-            rid = self.rid
-            self.rid += 1
+            rid = self.rid # set rid for insert
+            self.rid += 1 # increase rid by one to indicate new rid
                 
                     
             # Insert the value into each column's page
@@ -66,7 +66,7 @@ class Table:
             for col, value in enumerate(all_columns):#iterate though each part of all columns and stores value and METADATA in col 
                 offset = current_pages[col].write(value) # constantly points to last datapoint in list
             #store the range index and the offset to the page directory 
-            self.page_directory[rid] = (self.current_base_range_index, offset)
+            self.page_directory[rid] = (self.cur_base_range_index, offset)
             return rid 
         else:
             return False
@@ -82,7 +82,7 @@ class Table:
         # get base pages from the range index
         base_pages = self.base_pages[base_range_index]
         # store the old direction 
-        old_indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)
+        old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
         #get the current record via the RID
         current_record = self.get_record(rid)
         #store a copy of current record into tail columns 
@@ -105,7 +105,7 @@ class Table:
             if val is not None:
                 schema_encoding += (1 << i)# reads the value of i as a bit map
 
-        all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns# create all columns wit metadata and tail_columsn
+        all_columns = [old_direction, tail_rid, int(time()), schema_encoding] + tail_columns# create all columns wit metadata and tail_columsn
         #do the update
         tail_offset = None #set offset to none to update after adding page for speed
         for col, value in enumerate(all_columns): #enumerate through all columns metadata
@@ -149,28 +149,28 @@ class Table:
     def new_base_page_range(self):#Sage 
         # create page range
         page_range = [] 
-        for _ in range(self.total_columns): #iterate through every column
+        for blank in range(self.total_columns): #iterate through every column
             page_range.append(Page(capacity=512))#make new pages
         self.base_pages.append(page_range)#append that to the base page
-        self.current_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
+        self.cur_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
             
     def new_tail_page_range(self):#Sage 
          #create tail page range
         page_range = [] 
-        for _ in range(self.total_columns): #iterate through every column
-            page_range.append(Page(capacity=512))# make new columns 
+        for blank in range(self.total_columns): #iterate through every column
+            page_range.append(Page(capacity=512))# make new pages again 
         self.tail_pages.append(page_range)#append to tail pages 
-        self.current_tail_range_index = len(self.tail_pages) - 1 # increase tail range index by one 
+        self.cur_tail_range_index = len(self.tail_pages) - 1 # set tail range index by the length of the pages -1 
         
             
     def get_current_tail_pages(self):#Sage 
         #get current tail page range and create if needed
-        if self.current_tail_range_index < 0 :# if this is the first page
+        if self.cur_tail_range_index < 0 :# if this is the first page
             self.new_tail_page_range()# make new page range
-        current_pages = self.tail_pages[self.current_tail_range_index]#add index range page to current pages
+        current_pages = self.tail_pages[self.cur_tail_range_index]#add index range page to current pages
         if not current_pages[0].has_capacity():#check capacity and add if needed 
-            self.new_tail_page_range()
-            current_pages = self.tail_pages[self.current_tail_range_index]
+            self.new_tail_page_range()#add new page range for more capacity 
+            current_pages = self.tail_pages[self.cur_tail_range_index] # point to new page range
         return current_pages
 
     def get_record(self, rid):#incomplete
@@ -179,6 +179,7 @@ class Table:
             base_pages = self.base_pages[base_range_index]# add to base page 
             indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
             columns = []
+            
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
@@ -207,10 +208,10 @@ class Table:
         return updated_columns
     
         
-    def get_rid(self, rid): # Sage
+    def get_rid(self, rid): # Sage brokey and not work 
         return Record(rid, key, columns)
 
-    def __merge(self):
+    def __merge(self): # Milestone 2 requiremnt 
         print("merge is happening")
         pass
  
