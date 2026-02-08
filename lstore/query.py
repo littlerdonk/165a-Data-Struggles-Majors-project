@@ -144,7 +144,7 @@ except Exception:
     # find the record id based on the input index:
         try:
             key_column = self.table.key
-            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # assuming the inputs are valid
+            matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
             sum_range = 0
             for rid in matching_rids:
                 record = self.table.get_record(rid)
@@ -174,7 +174,7 @@ except Exception:
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
         # WORKING PROGRESS
         try:
-            matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) 
+            matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
             # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
             sum_ver = 0
             for rid in matching_rids:
