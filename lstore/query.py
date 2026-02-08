@@ -33,8 +33,8 @@ class Query:
             rid_list = btree[primary_key]
             rid_list.remove(rid)
             # if no RIDs remain for this key, remove the key entirely
-            if len(rid_list) == 0: 
-                del btree[primary_key] 
+            if not rid_list: # if list is empty
+                del btree[primary_key] # delete the key (so no empty lists remain)
             return True 
         except: 
             return False
