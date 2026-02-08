@@ -116,9 +116,9 @@ class Table:
         
         # update each column
         for col in range(self.num_columns):
-            if columns[col] is not None:  # Only update non-None values
-                page = self.base_pages[page_index][]col + 4] #change 4 with META DATA Config 
-                page.update(offset, columns[col])
+            if values[col] is not None:  # Only update non-None values
+                page = self.base_pages[base_range_index][col + 4] #change 4 with META DATA Config 
+                page.update(base_offset, values[col]) # Updates column value with new value
         #store tail in directory 
         self.page_directory[tail_rid] = (self.current_tail_range_index, tail_offset)
         #update base indirection 
@@ -208,8 +208,8 @@ class Table:
         return updated_columns
     
         
-    def get_rid(self, rid): # Sage brokey and not work 
-        return Record(rid, key, columns)
+    def get_rid(self, rid): # Sage and Nicholas
+        return self.get_record(rid) # Grabs record using get_record function above using RID
 
     def __merge(self): # Milestone 2 requiremnt 
         print("merge is happening")
