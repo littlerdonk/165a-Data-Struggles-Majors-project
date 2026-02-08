@@ -21,9 +21,9 @@ class Query:
     """
     def delete(self, primary_key): # naomi
         try:
-        key_column = self.table.key  # Get which column is the key
-        # B-Tree index to find all RIDs that have primary_key value
-        matching_rids = self.table.index.locate(key_column, primary_key) # returns a list of RIDs
+            key_column = self.table.key  # Get which column is the key
+            # B-Tree index to find all RIDs that have primary_key value
+            matching_rids = self.table.index.locate(key_column, primary_key) # returns a list of RIDs
         if matching_rids: # if records with primary key value found
             rid = matching_rids[0] # get first matching RID
             self.table.delete(rid) # call on the delete method to remove record
@@ -114,8 +114,8 @@ except Exception:
             # if rid not found --> return false
             matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
             if not matching_rid:#Sage: minor potential bug fix check if they are the same 
-                return false
-            updating = self.table.update(matching_rid[0], columns)#Sage minor bug fix becasue im 60% sure matching rids is a list 
+                return False
+            updating = self.table.update(matching_rid[0], list(columns))#Sage minor bug fix becasue im 60% sure matching rids is a list 
             # example:
             # student_id = 12345
             # updated_columns = [32, 88, 90, 30, 22] # every column wants to be updated in this case
@@ -141,14 +141,16 @@ except Exception:
     # Returns False if no record exists in the given range
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
-        # Find the record id based on the inputted index:
+    # Find the record id based on the inputted index:
         try:
             matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # assuming the inputs are valid
             sum_range = 0
-            for rid in matching_rids:#possibly a bug here not checking empty records 
-                sum_range += self.table.get_record(rid)#Sage: minor bug fix sum to sum_range the original variable 
+            for rid in matching_rids:
+                record = self.table.get_record(rid)
+                if record is not None:
+                    sum_range += record.columns[aggregate_column_index]
             return sum_range
-        except:
+        except Exception:
             return False # if inputs are invalid.
         # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
         #     For key in (start_range to end_range):
