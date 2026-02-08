@@ -141,8 +141,9 @@ except Exception:
     # Returns False if no record exists in the given range
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
-    # Find the record id based on the inputted index:
+    # find the record id based on the input index:
         try:
+            key_column = self.table.key
             matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # assuming the inputs are valid
             sum_range = 0
             for rid in matching_rids:
