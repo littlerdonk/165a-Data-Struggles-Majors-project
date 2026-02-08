@@ -1,5 +1,5 @@
 from lstore.index import Index
-from lstore.index import Page
+from lstore.page import Page
 from time import time
 
 INDIRECTION_COLUMN = 0
