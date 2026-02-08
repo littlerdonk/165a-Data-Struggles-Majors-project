@@ -174,26 +174,27 @@ class Query:
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
         # WORKING PROGRESS
         try:
-            matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
+            return self.sum(start_range, end_range, aggregate_column_index)
+            #matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
             # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
-            sum_ver = 0
-            for rid in matching_rids:
+            #sum_ver = 0
+            #for rid in matching_rids:
                 # check if there is a previous version (if the rid has not been updated there wouldn't be one)
-                if self.table.get_record(rid).indirection == None:
-                    sum_ver += self.table.columns[aggregate_column_index]
-                else:
-                    tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
-                    i = 0
-                    while i < abs(relative_version):
-                        tail_rid = self.table.get_record(tail_rid).indirection
+            #    if self.table.get_record(rid).indirection == None:
+            #        sum_ver += self.table.columns[aggregate_column_index]
+            #    else:
+            #        tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
+            #        i = 0
+            #        while i < abs(relative_version):
+            #            tail_rid = self.table.get_record(tail_rid).indirection
                         # Depending on the relative version, while loop goes back to previous versions using the tail page's indirection column
                         # Ex: relative_version = -1
                         # Functions within the loop execute once, we go to where the tail rid's indirection column is pointing to ONCE
-                        i += 1
-                    record_desired = self.table.get_record(tail_rid) # return the record of the desired version
-                    sum_ver += record_desired # add it to sum 
+            #            i += 1
+            #        record_desired = self.table.get_record(tail_rid) # return the record of the desired version
+            #        sum_ver += record_desired # add it to sum 
                     
-            return sum_ver
+            #return sum_ver
         except:
             return False
 
