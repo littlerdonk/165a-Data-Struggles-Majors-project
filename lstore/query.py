@@ -98,7 +98,9 @@ except Exception:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
-        pass
+        #Sage: for milestone 1 return the current version I think 
+        return self.select(search_key, search_key_index, projected_columns_index)
+    
 
     
     """
@@ -111,8 +113,9 @@ except Exception:
             # get rid from self.table using primary key
             # if rid not found --> return false
             matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
-
-            updating = self.table.update(matching_rid, columns)
+            if not matching_rid:#Sage: minor potential bug fix check if they are the same 
+                return false
+            updating = self.table.update(matching_rid[0], columns)#Sage minor bug fix becasue im 60% sure matching rids is a list 
             # example:
             # student_id = 12345
             # updated_columns = [32, 88, 90, 30, 22] # every column wants to be updated in this case
@@ -142,8 +145,8 @@ except Exception:
         try:
             matching_rids = self.table.index.locate_range(start_range, end_range, aggregate_column_index) # assuming the inputs are valid
             sum_range = 0
-            for rid in matching_rids:
-                sum += self.table.get_record(rid)
+            for rid in matching_rids:#possibly a bug here not checking empty records 
+                sum_range += self.table.get_record(rid)#Sage: minor bug fix sum to sum_range the original variable 
             return sum_range
         except:
             return False # if inputs are invalid.
