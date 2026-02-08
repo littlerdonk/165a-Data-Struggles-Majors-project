@@ -24,7 +24,7 @@ class Query:
             key_column = self.table.key  # Get which column is the key
             # B-Tree index to find all RIDs that have primary_key value
             matching_rids = self.table.index.locate(key_column, primary_key) # returns a list of RIDs
-            if not matching_rides:
+            if not matching_rids:
                 return False
             rid = matching_rids[0] # get first matching RID
             self.table.delete(rid) # call on the delete method to remove record
