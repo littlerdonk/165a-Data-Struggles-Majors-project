@@ -150,6 +150,8 @@ class Query:
                 record = self.table.get_record(rid)
                 if record is not None:
                     sum_range += record.columns[aggregate_column_index]
+                else:
+                    return False # if record is None, return false
             return sum_range
         except Exception:
             return False # if inputs are invalid.
