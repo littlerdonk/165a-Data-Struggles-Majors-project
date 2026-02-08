@@ -153,11 +153,11 @@ class Query:
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
             sum_range = 0
             for rid in matching_rids:
-                record = self.table.get_record(rid)
-                if record is not None:
-                    sum_range += record.columns[aggregate_column_index]
+                record = self.table.get_record(rid) # getting the row with the record using rid
+                if record is None:
+                    return False
                 else:
-                    return False # if record is None, return false
+                    sum_range += record.columns[aggregate_column_index] # getting the specified columns using column index
             return sum_range
         except Exception:
             return False # if inputs are invalid.
