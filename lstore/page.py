@@ -14,7 +14,7 @@ class Page:
 
     
     def write(self, value):
-        if self.has_capacity() is True: # Nicholas
+        if self.has_capacity(): # Nicholas
             #Calculates offset like standard Lstore 
             offset = self.num_records * RECORD_SIZE # Sage
             if value is None: 
