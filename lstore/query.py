@@ -175,6 +175,9 @@ class Query:
         # WORKING PROGRESS
         try:
             return self.sum(start_range, end_range, aggregate_column_index)
+            # Note: in milestone 1, we are not working with relative versions, so we are simply calling sum 
+            # Below is the code that would work for milestone 2 and beyond (theretically)
+        
             #matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
             # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
             #sum_ver = 0
