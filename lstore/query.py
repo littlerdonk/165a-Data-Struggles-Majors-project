@@ -149,7 +149,7 @@ class Query:
             for rid in matching_rids:
                 record = self.table.get_record(rid)
                 if record is not None:
-                    sum_range += record.columns[aggregate_column_index+4]
+                    sum_range += record.columns[aggregate_column_index]
             return sum_range
         except Exception:
             return False # if inputs are invalid.
@@ -180,7 +180,7 @@ class Query:
             for rid in matching_rids:
                 # check if there is a previous version (if the rid has not been updated there wouldn't be one)
                 if self.table.get_record(rid).indirection == None:
-                    sum_ver += self.table.columns[aggregate_column_index+4]
+                    sum_ver += self.table.columns[aggregate_column_index]
                 else:
                     tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
                     i = 0
