@@ -36,6 +36,8 @@ class Index:
     """
     # Alvin: will return all RID (not in order but from records with values closer to begin first then to end)
     def locate_range(self, begin, end, column):
+        if self.indices[column] is None: # sage: check none case to avoid potential errors 
+            return[]
         valuesWithinRange = list(self.indices[column].keys(min=begin, max=end))
         validRIDs = []
         #removes the lists format so only RID values are inputed into the list
