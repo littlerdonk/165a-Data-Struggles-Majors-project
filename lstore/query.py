@@ -180,7 +180,7 @@ except Exception:
             for rid in matching_rids:
                 # check if there is a previous version (if the rid has not been updated there wouldn't be one)
                 if self.table.get_record(rid).indirection == None:
-                    sum_ver += self.table.get_record(rid)
+                    sum_ver += self.table.columns[aggregate_column_index+4]
                 else:
                     tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
                     i = 0
