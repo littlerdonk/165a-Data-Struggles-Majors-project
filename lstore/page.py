@@ -1,3 +1,4 @@
+from lstore.Config import PAGE_SIZE, RECORD_SIZE
 
 class Page:
 
