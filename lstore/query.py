@@ -24,14 +24,14 @@ class Query:
             key_column = self.table.key  # Get which column is the key
             # B-Tree index to find all RIDs that have primary_key value
             matching_rids = self.table.index.locate(key_column, primary_key) # returns a list of RIDs
-        if matching_rids: # if records with primary key value found
-            rid = matching_rids[0] # get first matching RID
-            self.table.delete(rid) # call on the delete method to remove record
-            return True 
-        else: # no record is found with the primary key value
-            return False
-except Exception:
-        return False # if anything crashes, return False
+            if matching_rids: # if records with primary key value found
+                rid = matching_rids[0] # get first matching RID
+                self.table.delete(rid) # call on the delete method to remove record
+                return True 
+            else: # no record is found with the primary key value
+                return False
+        except Exception:
+                return False # if anything crashes, return False
     
     
     """
@@ -45,7 +45,7 @@ except Exception:
         try:
             # call table's insert method, returns RID on success or False on failure
             rid = self.table.insert(list(columns))
-            if rid: # see if insert successful
+            if rid is not False and rid is not None: # see if insert successful
                 key_value = columns[self.table.key] # primary key values from columns
                 self.table.index.indices[self.table.key][key_value] = rid # Adds an entry to the B-Tree index
                 return True
