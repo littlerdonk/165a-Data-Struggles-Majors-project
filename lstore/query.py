@@ -149,7 +149,7 @@ except Exception:
             for rid in matching_rids:
                 record = self.table.get_record(rid)
                 if record is not None:
-                    sum_range += record.columns[aggregate_column_index]
+                    sum_range += record.columns[aggregate_column_index+4]
             return sum_range
         except Exception:
             return False # if inputs are invalid.
