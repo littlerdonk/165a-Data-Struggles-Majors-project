@@ -2,11 +2,11 @@ from lstore.index import Index
 from lstore.page import Page
 from time import time
 
+# Layout of columns in metadata: [0] indirection, [1] rid, [2] timestamp, [3] schema encoding
 INDIRECTION_COLUMN = 0
 RID_COLUMN = 1
 TIMESTAMP_COLUMN = 2
 SCHEMA_ENCODING_COLUMN = 3
-
 
 class Record:
 
@@ -76,18 +76,18 @@ class Table:
             return False
         #get current Values from base or any existing tails 
         current_record = self.get_record(rid) 
-        # get base range index and base offset from the page directory 
+        #get base range index and base offset from the page directory 
         base_range_index, base_offset = self.page_directory[rid]
-        # get base pages from the range index
+        #get base pages from the range index
         base_pages = self.base_pages[base_range_index]
-        # store the old direction 
+        #store the old direction 
         old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
         #get the current record via the RID
         current_record = self.get_record(rid)
         #store a copy of current record into tail columns 
         tail_columns = current_record.columns.copy()
         
-        #get current tail pages
+        # get current tail pages
         for col, data in enumerate(values):# iterativly apply updates through columns 
             if data is not None:#if data is not not 
                 tail_columns[col] = data#add data to tail columns 
@@ -105,7 +105,7 @@ class Table:
                 schema_encoding += (1 << i)# reads the value of i as a bit map
 
         all_columns = [old_direction, tail_rid, int(time()), schema_encoding] + tail_columns# create all columns wit metadata and tail_columsn
-        #do the update
+        # do the update
         tail_offset = None #set offset to none to update after adding page for speed
         for col, value in enumerate(all_columns): #enumerate through all columns metadata
             tail_offset = tail_pages[col].write(value)#update offset to point ot latest page
@@ -140,7 +140,7 @@ class Table:
             return False
 
 
-    def new_base_page_range(self):#Sage 
+    def new_base_page_range(self):# Sage 
         # create page range
         page_range = [] 
         for blank in range(self.total_columns): #iterate through every column
@@ -148,7 +148,7 @@ class Table:
         self.base_pages.append(page_range)#append that to the base page
         self.cur_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
             
-    def new_tail_page_range(self):#Sage 
+    def new_tail_page_range(self):# Sage 
          #create tail page range
         page_range = [] 
         for blank in range(self.total_columns): #iterate through every column
@@ -157,7 +157,7 @@ class Table:
         self.cur_tail_range_index = len(self.tail_pages) - 1 # set tail range index by the length of the pages -1 
         
             
-    def get_current_tail_pages(self):#Sage 
+    def get_current_tail_pages(self):# Sage 
         #get current tail page range and create if needed
         if self.cur_tail_range_index < 0 :# if this is the first page
             self.new_tail_page_range()# make new page range
@@ -167,7 +167,7 @@ class Table:
             current_pages = self.tail_pages[self.cur_tail_range_index] # point to new page range
         return current_pages
 
-    def get_record(self, rid, page_version=0):# Sage and Nicholas
+    def get_record(self, rid, page_version=0):# Sage
         # Grabs a record from using its RID. If page is less than 0 then we grab a tail record instead.
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
@@ -230,7 +230,7 @@ class Table:
                     tail_value = tail_pages[col + 4].read(tail_offset)#read the update
                     merged_columns[col] = tail_value#set the update into merged columns 
         
-        return merged_columns#return all the updates 
+        return merged_columns #return all the updates 
     
         
     def get_rid(self, rid): # Sage and Nicholas
