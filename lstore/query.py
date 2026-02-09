@@ -148,6 +148,26 @@ class Query:
             matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
             if not matching_rid:#Sage: minor potential bug fix check if they are the same 
                 return False
+            rid = matching_rid[0]
+        
+
+        new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
+        
+        if new_key_value is not None and new_key_value != primary_key:
+            # PRIMARY KEY IS CHANGING
+            
+            # Check if new key already exists (would create duplicate)
+            existing = self.table.index.locate(self.table.key, new_key_value)
+            if existing:
+                return False  # Can't update to an existing key
+            
+            # Remove old key from index
+            btree = self.table.index.indices[self.table.key]
+            rid_list = btree[primary_key]
+            rid_list.remove(rid)
+            if len(rid_list) == 0:
+                del btree[primary_key]
+            
             updating = self.table.update(matching_rid[0], list(columns))#Sage minor bug fix becasue im 60% sure matching rids is a list 
             # example:
             # student_id = 12345
