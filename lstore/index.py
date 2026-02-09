@@ -15,7 +15,7 @@ class Index:
     #Alvin: adding an insert function for the b-tree that appends values instead of replaces, this way keys (column values) can refer to multiple values (multiple RIDS)
     def insert_btree(self, column, key, value):
         btree = self.indices[column]
-        if btree.has_key(key):
+        if key in btree:# sage fix to prevent bugs from privious version 
             btree[key].append(value)
         else:
             btree[key] = [value]
@@ -25,8 +25,10 @@ class Index:
     #Alvin: Example of how it works
     #locate(2, 100) for example, go to column two, and grab all records who have a the value 100 
     #Make sure to get the RID -> self.indices[column][value] = [rid1, rid2, rid3...]
-    def locate(self, column, value):
-        if self.indices[column].has_key(value):
+    def locate(self, column, value):# Sage: bug fixes from VS code 
+         if self.indices[column] is None:# added if none statment to check if there is a column 
+            return []
+        if value in self.indices[column]:#check value in column
             return self.indices[column][value]  
         else:
             return []
@@ -41,12 +43,9 @@ class Index:
         valuesWithinRange = list(self.indices[column].keys(min=begin, max=end))
         validRIDs = []
         #removes the lists format so only RID values are inputed into the list
-        for value in valuesWithinRange:
-            validRIDs.append(self.indices[column][value])
-        validRIDsNoBrackets = []
-        for value in validRIDs:
-            validRIDsNoBrackets.extend(value)
-        return validRIDsNoBrackets
+        for value in valuesExist:
+            validRIDs.extend(self.indices[column][value])#add all retrived values to ValidRIDs
+        return ValidRIDS
 
     """
     # optional: Create index on specific column
