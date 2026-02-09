@@ -172,6 +172,9 @@ class Table:
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
             base_pages = self.base_pages[base_range_index]# add to base page 
+            rid_value = base_pages[RID_COLUMN].read(base_offset)
+            if rid_value == 0 or rid_value is None:
+                return None  # Record was deleted
             indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
             columns = []
             
