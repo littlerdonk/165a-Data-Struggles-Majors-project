@@ -53,7 +53,7 @@ class Query:
             rid = self.table.insert(list(columns))
             if rid is not False and rid is not None: # see if insert successful
                 key_value = columns[self.table.key] # primary key values from columns
-                self.table.index.indices[self.table.key][key_value] = rid # Adds an entry to the B-Tree index
+                self.table.index.insert_btree(self.table.key, key_value, rid) # Adds an entry to the B-Tree index
                 return True
             else: # insert failed return False
                 return False
@@ -104,8 +104,30 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
     def select_version(self, search_key, search_key_index, projected_columns_index, relative_version):
-        #Sage: for milestone 1 return the current version I think 
-        return self.select(search_key, search_key_index, projected_columns_index)
+        #Sage: for milestone 1 return the current version I think so its just the same as sum
+        # copy pasted back in here becasue it broke if not in here idk why 
+        try:
+            # Use B-tree to find all RIDs with search_key value
+            matching_rids = self.table.index.locate(search_key_index, search_key)
+            if not matching_rids:
+                return False
+            
+            # Store list of record objects
+            results = []
+            for rid in matching_rids:
+                # Get the record with the specified version
+                record = self.table.get_record(rid, relative_version)
+                if record is None:
+                    continue
+                results.append(record)
+            
+            # If we found records, return them; return false if not
+            if results:
+                return results
+            else:
+                return False
+        except Exception:
+            return False
     
 
     
@@ -179,13 +201,17 @@ class Query:
     # Returns the summation of the given range upon success
     # Returns False if no record exists in the given range
     """
+    
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
-        # WORKING PROGRESS
         try:
-            return self.sum(start_range, end_range, aggregate_column_index)
-            # Note: in milestone 1, we are not working with relative versions, so we are simply calling sum 
-            # Below is the code that would work for milestone 2 and beyond (theretically)
-        
+            key_column = self.table.key
+            matching_rids = self.table.index.locate_range(start_range, end_range, key_column)
+            sum_range = 0
+            for rid in matching_rids:
+                record = self.table.get_record(rid, relative_version)
+                if record is not None:
+                    sum_range += record.columns[aggregate_column_index]
+            return sum_range
             #matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
             # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
             #sum_ver = 0
