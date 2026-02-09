@@ -110,7 +110,7 @@ class Query:
             # Use B-tree to find all RIDs with search_key value
             matching_rids = self.table.index.locate(search_key_index, search_key)
             if not matching_rids:
-                return []
+                return False
             
             # Store list of record objects
             results = []
@@ -125,9 +125,9 @@ class Query:
             if results:
                 return results
             else:
-                return []
+                return False
         except Exception:
-            return []
+            return False
     
 
     
