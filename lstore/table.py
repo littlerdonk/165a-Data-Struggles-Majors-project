@@ -172,16 +172,14 @@ class Table:
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
             base_pages = self.base_pages[base_range_index]# add to base page 
-            rid_value = base_pages[RID_COLUMN].read(base_offset)
-            if rid_value == 0 or rid_value is None:
-                return None  # Record was deleted
+
             indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
             columns = []
             
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
-            if indirection != 0 and page_version < 0: #If version of record is requested and record has tail pages then we apply tail updates.
+            if indirection != 0: #If version of record is requested and record has tail pages then we apply tail updates.
                 columns = self.tail_update(columns, indirection, page_version)#take all the columns and the in direction to update tail
             key = columns[self.key] 
             # Creates record and its indirection then returns full record
