@@ -114,11 +114,6 @@ class Table:
         # Get location
         page_index, offset = self.page_directory[rid]
         
-        # update each column
-        for col in range(self.num_columns):
-            if values[col] is not None:  # Only update non-None values
-                page = self.base_pages[base_range_index][col + 4] #change 4 with META DATA Config 
-                page.update(base_offset, values[col]) # Updates column value with new value
         #store tail in directory 
         self.page_directory[tail_rid] = (self.current_tail_range_index, tail_offset)
         #update base indirection 
@@ -183,29 +178,59 @@ class Table:
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
-            if indirection > 0: #has direction
+            if indirection != 0: #has direction
                 columns = self.tail_update(columns, indirection)#take all the columns and the in direction to update tail
-            if indirection == -1: # record has been deleted
-                return None
-            key = columns[self.key] # set Key to make record with Key value stored
-            return Record(rid, key, columns) #return the full record
+                key = columns[sel.key]
+                record = Record(rid, key, coulmns)
+                record.indirection = indirection 
+            return Record #return the full record
         else:
             return None#not in the page directory
             
-    def tail_update(self, base_columns, tail_rid):# sage 
-        #updates the tail pages using in get record
+    def tail_update(self, base_columns, tail_rid):# sage tail update and merge becasue select versions requires a tail update? 
+         #updates the tail pages using in get record
         if tail_rid == 0 or tail_rid not in self.page_directory:#checks if the rid exists and is not 0 
             return base_columns
     
-        tail_range_index, tail_offset = self.page_directory[tail_rid]#grab the range index and tail offset from the directory via RID
-        tail_pages = self.tail_pages[tail_range_index]#grab tail pages from the range index
-    
-        updated_columns = []
-        for col in range(4, self.total_columns):#iterate through each column in total columsn 
-            value = tail_pages[col].read(tail_offset)# read values from tail offset and set into values
-            updated_columns.append(value)# store updated values 
-    
-        return updated_columns
+        # Build the tail chain to understand versions
+        tail_chain = []
+        current_tail = tail_rid
+        while current_tail != 0 and current_tail in self.page_directory:
+            tail_chain.append(current_tail)
+            tail_range_index, tail_offset = self.page_directory[current_tail]
+            tail_pages = self.tail_pages[tail_range_index]
+            current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)
+        
+        # Determine how many tails to apply based on version
+        # version 0 = all tails (most recent)
+        # version -1 = all but the most recent tail (one version back)
+        # version -2 = all but the two most recent tails (two versions back), etc.
+        if version == 0:
+            # Apply all tails
+            num_tails_to_apply = len(tail_chain)
+        else:
+            # version -1 means skip the 1st tail, -2 means skip 2 tails, etc.
+            num_tails_to_skip = abs(version)
+            num_tails_to_apply = max(0, len(tail_chain) - num_tails_to_skip)
+        
+        # Start with base columns
+        merged_columns = base_columns.copy()
+        
+        # Apply tails from oldest to newest (reverse order) up to num_tails_to_apply
+        tails_to_process = tail_chain[::-1][:num_tails_to_apply]
+        
+        for tail_rid_item in tails_to_process:
+            tail_range_index, tail_offset = self.page_directory[tail_rid_item]
+            tail_pages = self.tail_pages[tail_range_index]
+            schema_encoding = tail_pages[SCHEMA_ENCODING_COLUMN].read(tail_offset)
+            
+            # Apply updates from this tail record based on schema encoding
+            for col_idx in range(self.num_columns):
+                if schema_encoding & (1 << col_idx):  # This column was updated in the tail
+                    tail_value = tail_pages[col_idx + 4].read(tail_offset)
+                    merged_columns[col_idx] = tail_value
+        
+        return merged_columns
     
         
     def get_rid(self, rid): # Sage and Nicholas
