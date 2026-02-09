@@ -148,20 +148,19 @@ class Query:
             matching_rid = self.table.index.locate(self.table.key, primary_key) # locating matching rid using key
             if not matching_rid:#Sage: minor potential bug fix check if they are the same 
                 return False
-            rid = matching_rid[0]
+            rid = matching_rid[0]#set rid from matching rids 
         
 
             new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
         
-            if new_key_value is not None and new_key_value != primary_key:
-                # PRIMARY KEY IS CHANGING
+            if new_key_value is not None and new_key_value != primary_key:#check if the primary key is changeing
             
-                # Check if new key already exists (would create duplicate)
+                # Check if new key already exists to avoid duplicates
                 existing = self.table.index.locate(self.table.key, new_key_value)
-                if existing:
-                    return False  # Can't update to an existing key
+                if existing:#if it already exists return fasle as you cant duplicate a key 
+                    return False 
                 
-                # Remove old key from index
+                #Sage: Remove old key from index
                 btree = self.table.index.indices[self.table.key]
                 rid_list = btree[primary_key]
                 rid_list.remove(rid)
@@ -180,9 +179,9 @@ class Query:
                     self.table.index.insert_btree(self.table.key, new_key_value, rid)
                     return True
                 else:
-                    self.table.index.insert_btree(self.table.key, primary_key, rid)#roll back
+                    self.table.index.insert_btree(self.table.key, primary_key, rid)#if its not updating ie updating = None roll back to avoid data corruption 
                     return False
-            else:
+            else:#primary key not changing push normal update
                 updating = self.table.update(rid, list(columns))
                 return updating
             
