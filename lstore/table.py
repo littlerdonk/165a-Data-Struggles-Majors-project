@@ -187,7 +187,7 @@ class Table:
         else:
             return None#not in the page directory
             
-    def tail_update(self, base_columns, tail_rid):# sage tail update and merge becasue select versions requires a tail update? 
+    def tail_update(self, base_columns, tail_rid, version=0):# sage tail update and merge becasue select versions requires a tail update? 
          #updates the tail pages using in get record
         if tail_rid == 0 or tail_rid not in self.page_directory:#checks if the rid exists and is not 0 
             return base_columns
@@ -234,7 +234,7 @@ class Table:
     
         
     def get_rid(self, rid): # Sage and Nicholas
-        return self.get_record(rid) # Grabs record using get_record function above using RID
+        return Record(rid, key, columns) # Grabs record using get_record function above using RID
 
     def __merge(self): # Milestone 2 requiremnt 
         print("merge is happening")
