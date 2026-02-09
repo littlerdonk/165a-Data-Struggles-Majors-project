@@ -45,7 +45,7 @@ class Index:
         #removes the lists format so only RID values are inputed into the list
         for value in valuesWithinRange:
             validRIDs.extend(self.indices[column][value])#add all retrived values to ValidRIDs
-        return validRIDS
+        return validRIDs
 
     """
     # optional: Create index on specific column
