@@ -49,6 +49,11 @@ class Query:
         # tracks updated columns (will be used in milestone 2); function takes just the column values, not schema encoding
         schema_encoding = '0' * self.table.num_columns
         try:
+            #sage: check for duplicate keys
+            key_value = columns[self.table.key]
+            existing = self.table.index.locate(self.table.key, key_value)
+            if existing:# Key already exists
+                return False
             # call table's insert method, returns RID on success or False on failure
             rid = self.table.insert(list(columns))
             if rid is not False and rid is not None: # see if insert successful
