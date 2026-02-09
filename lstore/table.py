@@ -167,7 +167,8 @@ class Table:
             current_pages = self.tail_pages[self.cur_tail_range_index] # point to new page range
         return current_pages
 
-    def get_record(self, rid, version = 0):#incomplete
+    def get_record(self, rid, page_version=0):# Sage and Nicholas
+        # Grabs a record from using its RID. If page is less than 0 then we grab a tail record instead.
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
             base_pages = self.base_pages[base_range_index]# add to base page 
@@ -177,9 +178,10 @@ class Table:
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
-            if indirection != 0: #has direction
-                columns = self.tail_update(columns, indirection, version)#take all the columns and the in direction to update tail
-            key = columns[self.key]
+            if indirection != 0 and page_version < 0: #If version of record is requested and record has tail pages then we apply tail updates.
+                columns = self.tail_update(columns, indirection, page_version)#take all the columns and the in direction to update tail
+            key = columns[self.key] 
+            # Creates record and its indirection then returns full record
             record = Record(rid, key, columns)
             record.indirection = indirection 
             return record #return the full record
