@@ -180,9 +180,9 @@ class Table:
                 columns.append(value)#append it to columns 
             if indirection != 0: #has direction
                 columns = self.tail_update(columns, indirection, version)#take all the columns and the in direction to update tail
-                key = columns[self.key]
-                record = Record(rid, key, columns)
-                record.indirection = indirection 
+            key = columns[self.key]
+            record = Record(rid, key, columns)
+            record.indirection = indirection 
             return record #return the full record
         else:
             return None#not in the page directory
