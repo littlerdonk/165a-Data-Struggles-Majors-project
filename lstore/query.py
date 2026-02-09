@@ -153,11 +153,11 @@ class Query:
 
             new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
         
-            if new_key_value is not None and new_key_value != primary_key:#check if the primary key is changeing
+            if new_key_value is not None and new_key_value != primary_key:#check if the primary key is changing
             
                 # Check if new key already exists to avoid duplicates
                 existing = self.table.index.locate(self.table.key, new_key_value)
-                if existing:#if it already exists return fasle as you cant duplicate a key 
+                if existing:#if it already exists return false as you cant duplicate a key 
                     return False 
                 
                 #Sage: Remove old key from index
@@ -167,21 +167,21 @@ class Query:
                 if len(rid_list) == 0:
                     del btree[primary_key]
                 
-                updating = self.table.update(rid, list(columns))#Sage minor bug fix becasue im 60% sure matching rids is a list 
-            # example:
-            # student_id = 12345
-            # updated_columns = [32, 88, 90, 30, 22] # every column wants to be updated in this case
+                updating = self.table.update(rid, list(columns))#Sage minor bug fix since matching_rid is a list 
+            # Iris's simple example:
+            # student_id = 12345 <- Primary Key in this case
+            # updated_columns = [32, 88, 90, 30, 22] <-  every column wants to be updated in this case
             # user calls update(student_id, updated_columns)
             # matching_rid <- a list of rids of the columns found using primary key and index locate
             # self.table.update(matching_rid, columns) should be going through each rid and updating the column with the specified values in updated_columns
             # If that's successful this update() will return True
-                if updating:
-                    self.table.index.insert_btree(self.table.key, new_key_value, rid)
+                if updating: # Returns True
+                    self.table.index.insert_btree(self.table.key, new_key_value, rid) # Updates the value in thebtree
                     return True
                 else:
-                    self.table.index.insert_btree(self.table.key, primary_key, rid)#if its not updating ie updating = None roll back to avoid data corruption 
+                    self.table.index.insert_btree(self.table.key, primary_key, rid) # if its not updating ie updating = None roll back to avoid data corruption 
                     return False
-            else:#primary key not changing push normal update
+            else: #primary key not changing push normal update
                 updating = self.table.update(rid, list(columns))
                 return updating
             
@@ -201,24 +201,16 @@ class Query:
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
     # find the record id based on the input index:
         try:
-            key_column = self.table.key
+            key_column = self.table.key # store the key of the table to be used in locate_range
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
-            sum_range = 0
-            for rid in matching_rids:
-                record = self.table.get_record(rid) # getting the row with the record using rid
-                if record is not None:
+            sum_range = 0 # set up sum_range variable for later
+            for rid in matching_rids: # for loop iterates through every rid in the matching_rids list and gets the record from the table
+                record = self.table.get_record(rid) # getting the current record using rid
+                if record is not None: # if record exists, add it to sum_range
                     sum_range += record.columns[aggregate_column_index] # getting the specified columns using column index
-                    
             return sum_range
         except Exception:
             return False # if inputs are invalid.
-        # sum = 0 ## assuming we're returning the number of students within this range since primary key = student id?
-        #     For key in (start_range to end_range):
-        #         If no duplicates of primary key (if a student has multiple entries in the record?):
-        #             sum += 1
-        # return sum
-        # except:
-        #     return False
 
     
     """
@@ -232,7 +224,8 @@ class Query:
     """
     
     def sum_version(self, start_range, end_range, aggregate_column_index, relative_version): # Iris
-        try:
+        try: 
+            # The code should be the same as sum, but get_record will include relative_version in the parameters this time
             key_column = self.table.key
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column)
             sum_range = 0
@@ -241,28 +234,11 @@ class Query:
                 if record is not None:
                     sum_range += record.columns[aggregate_column_index]
             return sum_range
-            #matching_rids = self.table.index.locate_range(start_range, end_range, self.table.key) 
-            # relative version is how many steps backwards we need to take (ex: -1 is one version backwards)
-            #sum_ver = 0
-            #for rid in matching_rids:
-                # check if there is a previous version (if the rid has not been updated there wouldn't be one)
-            #    if self.table.get_record(rid).indirection == None:
-            #        sum_ver += self.table.columns[aggregate_column_index]
-            #    else:
-            #        tail_rid = self.table.get_record(rid).indirection # base page indirection points to the latest version of the record
-            #        i = 0
-            #        while i < abs(relative_version):
-            #            tail_rid = self.table.get_record(tail_rid).indirection
-                        # Depending on the relative version, while loop goes back to previous versions using the tail page's indirection column
-                        # Ex: relative_version = -1
-                        # Functions within the loop execute once, we go to where the tail rid's indirection column is pointing to ONCE
-            #            i += 1
-            #        record_desired = self.table.get_record(tail_rid) # return the record of the desired version
-            #        sum_ver += record_desired # add it to sum 
-                    
-            #return sum_ver
         except:
             return False
+        # User inputs the range of values they're looking for, the column for what they want to sum, and the relative version of all the data
+        # -1 = 1 version backwards
+        # 0 = Most updated version (current version)
 
     
     """
