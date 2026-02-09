@@ -40,8 +40,7 @@ class Table:
         self.tail_pages = []
         self.cur_tail_range_index = -1 # the greater range index for base pages
         self.cur_base_range_index = -1 # the greater range index for base pages
-        self.next_rid = 0
-
+        
         self.new_base_page_range()# make the first base page range 
 
     
@@ -96,8 +95,8 @@ class Table:
         tail_pages = self.get_current_tail_pages()
         
         #create new tail RID 
-        tail_rid = self.next_rid 
-        self.next_rid  += 1
+        tail_rid = self.rid 
+        self.rid  += 1
 
         # schema encoding calculation
         schema_encoding = 0
@@ -115,7 +114,7 @@ class Table:
         page_index, offset = self.page_directory[rid]
         
         #store tail in directory 
-        self.page_directory[tail_rid] = (self.current_tail_range_index, tail_offset)
+        self.page_directory[tail_rid] = (self.curent_tail_range_index, tail_offset)
         #update base indirection 
         base_pages[INDIRECTION_COLUMN].update(base_offset, tail_rid)
         
