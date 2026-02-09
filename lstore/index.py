@@ -26,7 +26,7 @@ class Index:
     #locate(2, 100) for example, go to column two, and grab all records who have a the value 100 
     #Make sure to get the RID -> self.indices[column][value] = [rid1, rid2, rid3...]
     def locate(self, column, value):# Sage: bug fixes from VS code 
-         if self.indices[column] is None:# added if none statment to check if there is a column 
+        if self.indices[column] is None:# added if none statment to check if there is a column 
             return []
         if value in self.indices[column]:#check value in column
             return self.indices[column][value]  
