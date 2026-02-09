@@ -36,6 +36,7 @@ class Query:
             if len(rid_list) == 0: # if list is empty
                 del btree[primary_key] # delete the key (so no empty lists remain)
             return True 
+            # any issues or crash, return false
         except: 
             return False
     
@@ -52,13 +53,13 @@ class Query:
             #sage: check for duplicate keys
             key_value = columns[self.table.key]
             existing = self.table.index.locate(self.table.key, key_value)
-            if existing:# Key already exists
+            if existing: # key already exists
                 return False
             # call table's insert method, returns RID on success or False on failure
             rid = self.table.insert(list(columns))
-            if rid is not False and rid is not None: # see if insert successful
+            if rid is not False and rid is not None: # see if insert successful (handles rid=0 as well)
                 key_value = columns[self.table.key] # primary key values from columns
-                self.table.index.insert_btree(self.table.key, key_value, rid) # Adds an entry to the B-Tree index
+                self.table.index.insert_btree(self.table.key, key_value, rid) # adds an entry to B-Tree index
                 return True
             else: # insert failed return False
                 return False
@@ -82,10 +83,10 @@ class Query:
                 return False
             # store list of record objects
             results = []
-            for rid in matching_rids: #go through each matching rid
+            for rid in matching_rids: # go through each matching rid
                 # table's get_record method from table.py to get the full Record object
                 record = self.table.get_record(rid)
-                if record is None: #skip if record dne or is none
+                if record is None: # skip if record dne or is none
                     continue
                 results.append(record)
         
