@@ -33,8 +33,8 @@ class Page:
             return -1
             
     def read(self, offset): # Sage
-        #Read a value from the page at the given offset.
-        #Returns the integer value stored at that offset.
+        # Read a value from the page at the given offset.
+        # Returns the integer value stored at that offset.
         value_bytes = self.data[offset:offset + RECORD_SIZE] # Grabs the data from the offset to the end of the record 
         value = int.from_bytes(value_bytes, byteorder = 'big', signed=True) # Changes value_bytes to ints and returns them 
         return value 
