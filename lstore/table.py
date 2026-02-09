@@ -196,17 +196,14 @@ class Table:
     
         # Build the tail chain to understand versions
         tail_chain = []
-        current_tail = tail_rid
-        while current_tail != 0 and current_tail in self.page_directory:
-            tail_chain.append(current_tail)
-            tail_range_index, tail_offset = self.page_directory[current_tail]
-            tail_pages = self.tail_pages[tail_range_index]
-            current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)
+        current_tail = tail_rid# set current tail 
+        while current_tail != 0 and current_tail in self.page_directory:# if it exists 
+            tail_chain.append(current_tail)#append to the chain 
+            tail_range_index, tail_offset = self.page_directory[current_tail]#get range index and offset 
+            tail_pages = self.tail_pages[tail_range_index]# grab all the tail pages 
+            current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#read tailpages into current tail 
         
         # Determine how many tails to apply based on version
-        # version 0 = all tails (most recent)
-        # version -1 = all but the most recent tail (one version back)
-        # version -2 = all but the two most recent tails (two versions back), etc.
         if version == 0:
             # Apply all tails
             num_tails_to_apply = len(tail_chain)
@@ -215,24 +212,22 @@ class Table:
             num_tails_to_skip = abs(version)
             num_tails_to_apply = max(0, len(tail_chain) - num_tails_to_skip)
         
-        # Start with base columns
-        merged_columns = base_columns.copy()
+        merged_columns = base_columns.copy()# Start with base columns
         
-        # Apply tails from oldest to newest (reverse order) up to num_tails_to_apply
-        tails_to_process = tail_chain[::-1][:num_tails_to_apply]
+        process = tail_chain[::-1][:num_tails_to_apply]# Apply tails from oldest to newest (reverse order) up to num_tails_to_apply
         
-        for tail_rid_item in tails_to_process:
-            tail_range_index, tail_offset = self.page_directory[tail_rid_item]
-            tail_pages = self.tail_pages[tail_range_index]
-            schema_encoding = tail_pages[SCHEMA_ENCODING_COLUMN].read(tail_offset)
+        for item in process:#iterate through process 
+            tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
+            tail_pages = self.tail_pages[tail_range_index]# set the tail pages
+            schema_encoding = tail_pages[SCHEMA_ENCODING_COLUMN].read(tail_offset)#set the schemea encoding 
             
             # Apply updates from this tail record based on schema encoding
-            for col_idx in range(self.num_columns):
-                if schema_encoding & (1 << col_idx):  # This column was updated in the tail
-                    tail_value = tail_pages[col_idx + 4].read(tail_offset)
-                    merged_columns[col_idx] = tail_value
+            for col in range(self.num_columns):
+                if schema_encoding & (1 << col):  # check if it was updated
+                    tail_value = tail_pages[col + 4].read(tail_offset)#read the update
+                    merged_columns[col] = tail_value#set the update into merged columns 
         
-        return merged_columns
+        return merged_columns#return all the updats 
     
         
     def get_rid(self, rid): # Sage and Nicholas
