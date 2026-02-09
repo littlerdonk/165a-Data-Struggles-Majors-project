@@ -60,6 +60,11 @@ class Query:
             if rid is not False and rid is not None: # see if insert successful (handles rid=0 as well)
                 key_value = columns[self.table.key] # primary key values from columns
                 self.table.index.insert_btree(self.table.key, key_value, rid) # adds an entry to B-Tree index
+                #Alvin: This code adds the other column values to its respective column index
+                #Alvin: Note we might be able to combine the primary in the for loop to simplify it
+                for colNum in range(0,len(columns)):
+                    if colNum != self.table.key:
+                        self.table.index.insert_btree(colNum, columns[colNum], rid)                 
                 return True
             else: # insert failed return False
                 return False
