@@ -206,15 +206,15 @@ class Table:
         # Determine how many tails to apply based on version
         if version == 0:
             # Apply all tails
-            num_tails_to_apply = len(tail_chain)
+            num_apply = len(tail_chain)
         else:
             # version -1 means skip the 1st tail, -2 means skip 2 tails, etc.
-            num_tails_to_skip = abs(version)
-            num_tails_to_apply = max(0, len(tail_chain) - num_tails_to_skip)
+            num_skip = abs(version)
+            num_apply = max(0, len(tail_chain) - num_skip)
         
         merged_columns = base_columns.copy()# Start with base columns
         
-        process = tail_chain[::-1][:num_tails_to_apply]# Apply tails from oldest to newest (reverse order) up to num_tails_to_apply
+        process = tail_chain[::-1][:num_apply]# Apply tails from oldest to newest up to num_tapply
         
         for item in process:#iterate through process 
             tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
@@ -227,7 +227,7 @@ class Table:
                     tail_value = tail_pages[col + 4].read(tail_offset)#read the update
                     merged_columns[col] = tail_value#set the update into merged columns 
         
-        return merged_columns#return all the updats 
+        return merged_columns#return all the updates 
     
         
     def get_rid(self, rid): # Sage and Nicholas
