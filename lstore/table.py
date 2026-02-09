@@ -179,11 +179,11 @@ class Table:
                 value = base_pages[col].read(base_offset)#grab value from the read of the offset
                 columns.append(value)#append it to columns 
             if indirection != 0: #has direction
-                columns = self.tail_update(columns, indirection)#take all the columns and the in direction to update tail
-                key = columns[sel.key]
-                record = Record(rid, key, coulmns)
+                columns = self.tail_update(columns, indirection, version)#take all the columns and the in direction to update tail
+                key = columns[self.key]
+                record = Record(rid, key, columns)
                 record.indirection = indirection 
-            return Record #return the full record
+            return record #return the full record
         else:
             return None#not in the page directory
             
