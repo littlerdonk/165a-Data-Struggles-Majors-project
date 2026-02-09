@@ -33,7 +33,7 @@ class Query:
             rid_list = btree[primary_key]
             rid_list.remove(rid)
             # if no RIDs remain for this key, remove the key entirely
-            if not rid_list: # if list is empty
+            if len(rid_list) == 0: # if list is empty
                 del btree[primary_key] # delete the key (so no empty lists remain)
             return True 
         except: 
@@ -176,10 +176,9 @@ class Query:
             sum_range = 0
             for rid in matching_rids:
                 record = self.table.get_record(rid) # getting the row with the record using rid
-                if record is None:
-                    return False
-                else:
+                if record is not None:
                     sum_range += record.columns[aggregate_column_index] # getting the specified columns using column index
+                    
             return sum_range
         except Exception:
             return False # if inputs are invalid.
