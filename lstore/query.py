@@ -151,24 +151,24 @@ class Query:
             rid = matching_rid[0]
         
 
-        new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
+            new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
         
-        if new_key_value is not None and new_key_value != primary_key:
-            # PRIMARY KEY IS CHANGING
+            if new_key_value is not None and new_key_value != primary_key:
+                # PRIMARY KEY IS CHANGING
             
-            # Check if new key already exists (would create duplicate)
-            existing = self.table.index.locate(self.table.key, new_key_value)
-            if existing:
-                return False  # Can't update to an existing key
-            
-            # Remove old key from index
-            btree = self.table.index.indices[self.table.key]
-            rid_list = btree[primary_key]
-            rid_list.remove(rid)
-            if len(rid_list) == 0:
-                del btree[primary_key]
-            
-            updating = self.table.update(matching_rid[0], list(columns))#Sage minor bug fix becasue im 60% sure matching rids is a list 
+                # Check if new key already exists (would create duplicate)
+                existing = self.table.index.locate(self.table.key, new_key_value)
+                if existing:
+                    return False  # Can't update to an existing key
+                
+                # Remove old key from index
+                btree = self.table.index.indices[self.table.key]
+                rid_list = btree[primary_key]
+                rid_list.remove(rid)
+                if len(rid_list) == 0:
+                    del btree[primary_key]
+                
+                updating = self.table.update(rid, list(columns))#Sage minor bug fix becasue im 60% sure matching rids is a list 
             # example:
             # student_id = 12345
             # updated_columns = [32, 88, 90, 30, 22] # every column wants to be updated in this case
@@ -176,10 +176,16 @@ class Query:
             # matching_rid <- a list of rids of the columns found using primary key and index locate
             # self.table.update(matching_rid, columns) should be going through each rid and updating the column with the specified values in updated_columns
             # If that's successful this update() will return True
-            if updating:
-                return True
+                if updating:
+                    self.table.index.insert_btree(self.table.key, new_key_value, rid)
+                    return True
+                else:
+                    self.table.index.insert_btree(self.table.key, primary_key, rid)#roll back
+                    return False
             else:
-                return False
+                updating = self.table.update(rid, list(columns))
+                return updating
+            
         except:
             return False
         pass
