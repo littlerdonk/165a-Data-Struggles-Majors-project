@@ -189,8 +189,11 @@ class Table:
         else:
             return None#not in the page directory
             
-    def tail_update(self, base_columns, tail_rid, version=0):# sage tail update and merge becasue select versions requires a tail update? 
-         #updates the tail pages using in get record
+    def tail_update(self, base_columns, tail_rid, version=0):# sage tail update and partial merge because select versions requires a tail update? 
+         #updates the tail pages used in get record
+        #follows tail pages and indirection pointers to get a spesific version 
+        #not full merge as it does not change tail records and does not modify pysical storage
+        # THIS WILL NEED TO BE CHANGED FOR A FULL MERGE IMPLEMENTATION!!!!!
         if tail_rid == 0 or tail_rid not in self.page_directory:#checks if the rid exists and is not 0 
             return base_columns
     
