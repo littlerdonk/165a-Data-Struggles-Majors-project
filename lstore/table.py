@@ -114,7 +114,7 @@ class Table:
         page_index, offset = self.page_directory[rid]
         
         #store tail in directory 
-        self.page_directory[tail_rid] = (self.curent_tail_range_index, tail_offset)
+        self.page_directory[tail_rid] = (self.cur_tail_range_index, tail_offset)
         #update base indirection 
         base_pages[INDIRECTION_COLUMN].update(base_offset, tail_rid)
         
