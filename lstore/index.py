@@ -40,12 +40,12 @@ class Index:
     def locate_range(self, begin, end, column):
         if self.indices[column] is None: # sage: check none case to avoid potential errors 
             return[]
-        valuesWithinRange = list(self.indices[column].keys(min=begin, max=end))
-        validRIDs = []
+        valueExists = list(self.indices[column].keys(min=begin, max=end))
+        RIDList = []
         #removes the lists format so only RID values are inputed into the list
-        for value in valuesWithinRange:
-            validRIDs.extend(self.indices[column][value])#add all retrived values to ValidRIDs
-        return validRIDs
+        for value in valueExists:
+            RIDList.extend(self.indices[column][value])#add all retrived values to ValidRIDs
+        return RIDList
 
     """
     # optional: Create index on specific column
