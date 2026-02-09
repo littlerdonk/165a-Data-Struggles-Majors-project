@@ -15,7 +15,7 @@ class Index:
     #Alvin: adding an insert function for the b-tree that appends values instead of replaces, this way keys (column values) can refer to multiple values (multiple RIDS)
     def insert_btree(self, column, key, value):
         if self.indices[column] is None:
-        return False 
+            return False 
         btree = self.indices[column]
         if key in btree:# sage fix to prevent bugs from privious version 
             btree[key].append(value)
