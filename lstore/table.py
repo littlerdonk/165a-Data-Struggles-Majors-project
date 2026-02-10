@@ -226,7 +226,7 @@ class Table:
             
             # Apply updates from this tail record based on schema encoding
             for col in range(self.num_columns):
-                if schema_encoding & (1 << col):  # check if it was updated
+                if schema_encoding & (1 << col):# check if it was updated
                     tail_value = tail_pages[col + 4].read(tail_offset)#read the update
                     merged_columns[col] = tail_value#set the update into merged columns 
         
