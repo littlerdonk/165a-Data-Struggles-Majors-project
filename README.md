@@ -1,5 +1,5 @@
 # StruggleDB
-Full M1 implimentaion done by group Data Struggles Majors
+Full M1 implimentation done by group Data Struggles Majors
 
 Sage Dillemuth: Team lead, Tester completed about 40% total: Table.py and Page.py and bug test around 
 
