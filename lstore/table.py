@@ -215,16 +215,16 @@ class Table:
             num_skip = abs(version)
             num_apply = max(0, len(tail_chain) - num_skip)
         
-        merged_columns = base_columns.copy()# Start with base columns
+        merged_columns = base_columns.copy()#Start with base columns
         
-        process = tail_chain[::-1][:num_apply]# Apply tails from oldest to newest up to num_tapply
+        process = tail_chain[::-1][:num_apply]#Apply tails from oldest to newest
         
         for item in process:#iterate through process 
             tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
             tail_pages = self.tail_pages[tail_range_index]# set the tail pages
             schema_encoding = tail_pages[SCHEMA_ENCODING_COLUMN].read(tail_offset)#set the schemea encoding 
             
-            # Apply updates from this tail record based on schema encoding
+            #Apply updates from this tail record based on schema encoding
             for col in range(self.num_columns):
                 if schema_encoding & (1 << col):# check if it was updated
                     tail_value = tail_pages[col + 4].read(tail_offset)#read the update
