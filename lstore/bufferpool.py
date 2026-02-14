@@ -3,16 +3,28 @@ class BufferPool():
         # initializes buffer pool and sets capacity for it
         self.pool = {}
         self.buffer_capacity = capacity
-
-
+        self.dirty = set()
+    
     def buffer_insert(self, key, value): # Nicholas
         if key not in self.pool: #checks if requested key is already in buffer pool
             if self.buffer_at_capacity():
-                # look to evict data from pool
-                # check if value that is about to be evicted is dirty
-                    # if value is dirty then write value to storage drive and remove from buffer pool
-
-                self.pool[key] = value #adds value to pool once old value is evicted
+                oldest_value = list(self.pool.keys())[0] #grabs oldest key from bufferpool for eviction
+                for i in self.pool:
+                    if i not in drive: #checks if data is dirty
+                        self.mark_dirty(value) #Marks data in buffer pool as dirty if not in storage drive
+                     else:
+                        pass
+                if self.pool[-1] is dirty #checks if oldest value in buffer pool is dirty
+                    # Put code here to put dirty value in storage drive
+                    self.evict(self.pool[-1]) #evicts data from pool after writing to storage
+                    self.pool[-1] = key
+                else:
+                    self.evict(self.pool) #evicts data from pool after writing to storage
+                    self.pool[-1] = key
+            else: 
+                self.pool[-1] = key
+                    
+                    
 
         elif key in self.pool:
             existing_value = self.pool[key] #grabs value from pool
@@ -27,6 +39,9 @@ class BufferPool():
         pass
 
     def mark_dirty(self):
+        self.dirty.add(key)
         pass
+
+    
 
 
