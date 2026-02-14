@@ -236,7 +236,16 @@ class Table:
     def get_rid(self, rid): # Sage and Nicholas
         return Record(rid, key, columns) # Grabs record using get_record function above using RID
 
-    def __merge(self): # Milestone 2 requiremnt 
+    def __merge(self): #Sage 
+        merge_rid = []#what merges are gonna happen
+        for rid in self.page_directory.items():#iterate through the whole page directory 
+            range_index, offset = self.page_directory[rid]#grab the range index and the offset from directory
+            if range_index <= self.cur_base_range_index:# if the range index is less than or = to the base range index
+                base_pages = self.base_pages[range_index]#set the base pages to the grabbed range index
+                indirection = base_pages[INDIRECTION_COLUMN].read(offset)#set indirection 
+                if indirection != 0 and indirection in self.page_directory:# if there is an indirection that exists in the directory
+                    merge_rid.append(rid)#append it as it needs to merge
+        
         print("merge is happening")
         pass
  
