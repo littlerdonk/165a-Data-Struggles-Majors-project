@@ -5,38 +5,38 @@ class BufferPool():
         self.buffer_capacity = capacity
         self.dirty = set()
 
+    def buffer_insert(self, key, value):  # Nicholas
+        if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
+            if self.buffer_at_capacity(): # if bufferpool is at capacity then we must replace our oldest value with a new one
+                oldest_value = list(self.pool.keys())[0]  # grabs oldest key from bufferpool for eviction
+                for i in self.pool: # Goes through all the data in the buffer pool and marks the values that havent been written to the drive as dirty
+                    if i not in drive: # will have to find some way to check if updated data is already in the storage drive
+                        self.mark_dirty(value)  # Marks data in buffer pool as dirty if not in storage drive
+                    else:
+                        pass
+                if oldest_value in self.dirty: # If the oldest value in the buffer pool is not written to the secondary storage then we need to write it before eviction
+                    # Put code here to put dirty value in storage drive
+                    self.evict_key(oldest_value)  # evicts data from pool after writing it to storage
+                    self.pool[key] = value
+                else: # If oldest value in buffer pool is already written to secondary storage then it is safe to evict data from buffer pool
+                    self.evict_key(oldest_value)  # evicts non-dirty data from pool
+                    self.pool[key] = value
+            else: # If buffer pool not at capacity then it safe to add new value without the need for any evictions
+                self.pool[key] = value
+
+
+
+        elif key in self.pool: # if requested key is already in the buffer pool (RAM) then we simply grab that value
+            existing_value = self.pool[key]  # grabs value from pool
+
+    def mark_dirty(self, key):
+        self.dirty.add(key) #adds key to dirty value's set
+
     def buffer_at_capacity(self):  # Nicholas
         return len(self.pool) >= self.buffer_capacity  # checks if there is capacity available in bufferpool and returns true/false
 
     def evict_key(self, key):
         del self.pool[key]  # deletes key from buffer pool
-
-    def buffer_insert(self, key, value):  # Nicholas
-        if key not in self.pool:  # checks if requested key is already in buffer pool
-            if self.buffer_at_capacity():
-                oldest_value = list(self.pool.keys())[0]  # grabs oldest key from bufferpool for eviction
-                for i in self.pool:
-                    if i not in drive:  # checks if data is dirty
-                        self.mark_dirty(value)  # Marks data in buffer pool as dirty if not in storage drive
-                    else:
-                        pass
-                if oldest_value in self.dirty:  # checks if oldest value in buffer pool is dirty
-                    # Put code here to put dirty value in storage drive
-                    self.evict_key(oldest_value)  # evicts data from pool after writing it to storage
-                    self.pool[key] = value
-                else:
-                    self.evict_key(oldest_value)  # evicts non-dirty data from pool
-                    self.pool[key] = value
-            else:
-                self.pool[key] = value
-
-
-
-        elif key in self.pool:
-            existing_value = self.pool[key]  # grabs value from pool
-
-    def mark_dirty(self, key):
-        self.dirty.add(key) #adds key to dirty value's set
 
 
     
