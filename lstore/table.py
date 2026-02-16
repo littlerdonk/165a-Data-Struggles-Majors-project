@@ -246,6 +246,20 @@ class Table:
                 if indirection != 0 and indirection in self.page_directory:# if there is an indirection that exists in the directory
                     merge_rid.append(rid)#append it as it needs to merge
         
-        print("merge is happening")
+        for rid in merge_rids:#read current base columns
+            base_range_index, base_offset = self.page_directory[rid]
+            base_pages = self.base_pages[base_range_index]
+            base_columns = []
+        for col in range(4, self.total_columns):
+            base_columns.append(base_pages[col].read(base_offset))
+            
+        indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)#get indirection 
+
+        merged_columns = self.tail_update(base_columns, indirection, version=0)#get latest columns using indirection 
+
+        for col, value in enumerate(merged_columns):#write merged values back into tail data
+            base_pages[col + 4].update(base_offset, value)
+
+        #walk the tail chain 
         pass
  
