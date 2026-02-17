@@ -1,4 +1,5 @@
 from lstore.table import Table
+from lstore.page import Page
 
 class Database():
 
@@ -6,8 +7,10 @@ class Database():
         self.tables = []
         pass
 
-    # Not required for milestone1
+    # loads all the table data from disk back into memory so the database can pick up where it left off
     def open(self, path): # naomi
+        self.path = path
+        
         pass
 
     def close(self): #naomi
