@@ -7,10 +7,10 @@ class Database():
         pass
 
     # Not required for milestone1
-    def open(self, path):
+    def open(self, path): # naomi
         pass
 
-    def close(self):
+    def close(self): #naomi
         pass
 
     """
