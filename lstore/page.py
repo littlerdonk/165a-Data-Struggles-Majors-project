@@ -7,6 +7,8 @@ class Page:
         # This is just a bytearray that is representative of pages raw data
         self.data = bytearray(PAGE_SIZE)
         # Calculates page capacity if capacity is not provided
+        self.pin_count = 0 # Iris: number of users currently accessing the page (default is 0)
+        # If pin_count > 0, then the page should be locked before merge happens
         if capacity is None:
             self.capacity = PAGE_SIZE // RECORD_SIZE # 512 records for a 4kb page
         else: 
