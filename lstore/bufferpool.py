@@ -35,6 +35,14 @@ class BufferPool():
     def buffer_at_capacity(self):  # Nicholas
         return len(self.pool) >= self.buffer_capacity  # checks if there is capacity available in bufferpool and returns true/false
 
+    def is_page_pinned(self, key): # Iris
+        # checking if the pin count of the page is more than 0, if so then the page is locked from merging, eviction, etc.
+        if self.pool[key].pin_count > 0:
+            # assuming self.pool[key] is calling the page??
+            return True # returns true if page is pinned 
+        else:
+            return False # other wise pin_count = 0, so the page is safe to evict, merge, etc.
+    
     def evict_key(self, key):
         del self.pool[key]  # deletes key from buffer pool
 
