@@ -56,6 +56,10 @@ class Index:
     def create_index(self, column_number):
         #creates the bTree for that column
         self.indices[column_number] = OOBTree()
+        #######WORK IN PROGRESS BY ALVIN
+        #Index/btree can be created at any point in time for non-primary key columns, so if creating index later, must get all values from before
+        #Concept: for all current RID entries, access that specific column number and retrieve + index it to the B-tree
+        #######
         return True
     """
     # optional: Drop index of specific column
