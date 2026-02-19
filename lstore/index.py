@@ -53,14 +53,20 @@ class Index:
     # optional: Create index on specific column
     """
     #Note that primary key is already made in initialization
+    #Alvin: Redone for M2 to allow making the index AFTER already having records inserted, will go through every RID
+    # (base and tail) and add its column value into the newly created btree
     def create_index(self, column_number):
         #creates the bTree for that column
         self.indices[column_number] = OOBTree()
-        #######WORK IN PROGRESS BY ALVIN
         #Index/btree can be created at any point in time for non-primary key columns, so if creating index later, must get all values from before
         #Concept: for all current RID entries, access that specific column number and retrieve + index it to the B-tree
-        #######
+        for rid in range(0, self.table.rid):
+            if rid in self.table.page_directory: #checks to make sure rid is in the page directory
+                current_record = self.table.get_record(rid)
+                keyForTree = current_record.columns[column_number]
+                self.table.index.insert_btree(column_number, keyForTree, rid)
         return True
+
     """
     # optional: Drop index of specific column
     """
