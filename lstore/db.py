@@ -2,6 +2,7 @@ from lstore.table import Table
 from lstore.page import Page
 import os
 import json
+import io
 
 class Database():
 
@@ -20,13 +21,14 @@ class Database():
             os.makedirs(path)
         
         # if there's no metadata file, this is a brand new database, so nothing to load
-        meta_path = os.path.join(path, 'metadata.json') # builds the full path to where the metadata file would be
+        meta_path = path + '/metadata.json' # builds the full path to where the metadata file would be
         if not os.path.exists(meta_path):
             return
 
-        # open and read the metadata file which stores all table info
-        with open(meta_path, 'r') as f:
-            meta = json.load(f) # converts metadata file into a python dict we can use
+        # read the metadata file which has all the saved table info
+        meta_file = io.open(meta_path, 'r')
+        meta = json.load(meta_file)
+        meta_file.close()
 
         # recreate the table object with the same name, columns, and key as before
         for table_data in meta['tables']: # # loop through each table that was saved
@@ -96,16 +98,75 @@ class Database():
             #     self.bufferpool.evict_key(key)
 
         # write metadata to a file so we can load it back later in open
-        meta_path = os.path.join(self.path, 'metadata.json')
-        with open(meta_path, 'w') as f:
-            json.dump(meta, f)
+        meta_path = self.path + '/metadata.json'
+        meta_file = io.open(meta_path, 'w')
+        json.dump(meta, meta_file)
+        meta_file.close()
 
     # helper for open, loads pages from disk back into memory
-    def load_pages(self, table, table_data, page_type):
-        pass
+    def load_pages(self, table, table_data, page_type): # naomi
+        pages = []
+        r_idx = 0
+        while True:
+            # each range is its own folder
+            range_folder = 'range_' + str(r_idx)
+            range_path = os.path.join(self.path, table.name, page_type, range_folder)
+            
+            # if the folder doesnt exist we've loaded all the ranges --> stop
+            if not os.path.exists(range_path):
+                break
+                
+            # load each cols page from this range
+            page_range = []
+            for col in range(table.total_columns):
+                # create new page object to load data to
+                page = Page(capacity=512)
+                # read raw bytes from disk back into the page
+                col_file = os.path.join(range_path, 'col_' + str(col) + '.bin')
+                with io.open(col_file, 'rb') as f:
+                    page.data = bytearray(f.read())
+                    
+                # restore how many records were in this page when we saved it
+                num_records_key = page_type + '_num_records'
+                page.num_records = table_data[num_records_key][r_idx][col]
+                page_range.append(page)
+            pages.append(page_range)
+            r_idx += 1
+        return pages
 
     # helper for close, save pages from memory to disk
-    def save_pages(self, table, page_type):
+    def save_pages(self, table, page_type): # naomi
+        # figure out if we're saving base or tail pages
+        if page_type == 'base':
+            pages = table.base_pages
+        else:
+            pages = table.tail_pages
+        all_num_records = []
+        r_idx = 0
+        for page_range in pages:
+            # make a folder for this range like
+            range_folder = 'range_' + str(r_idx)
+            range_path = self.path + '/' + table.name + '/' + page_type + '/' + range_folder
+            os.makedirs(range_path, exist_ok=True)
+
+            # save each column page to its own file
+            col_records = []
+            for col in range(len(page_range)):
+                page = page_range[col]
+                # write raw bytes of page to disk
+                col_file = range_path + '/col_' + str(col) + '.bin' # build the path to this column's file
+                # open the file and write the page data to disk
+                col_file_open = io.open(col_file, 'wb')
+                col_file_open.write(page.data)
+                col_file_open.close()
+                # save num records to restore later in open
+                col_records.append(page.num_records)
+
+            all_num_records.append(col_records)
+            r_idx += 1
+        return all_num_records    
+
+    
         
     """
     # Creates a new table
@@ -113,20 +174,28 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key_index):
+    def create_table(self, name, num_columns, key_index): # naomi
         table = Table(name, num_columns, key_index)
+        self.tables.append(table)
         return table
 
     
     """
     # Deletes the specified table
     """
-    def drop_table(self, name):
-        pass
+    def drop_table(self, name): # naomi
+        # loop through tables and remove the one with the matching name
+        for table in self.tables:
+            if table.name == name:
+                self.tables.remove(table)
+                return
 
     
     """
     # Returns table with the passed name
     """
-    def get_table(self, name):
-        pass
+    def get_table(self, name): # naomi
+        for table in self.tables:
+            if table.name == name:
+                return table
+        return None
