@@ -30,7 +30,11 @@ class Table:
     """
     def __init__(self, name, num_columns, key):
         self.name = name
-        self.Bufferpool = Bufferpool(self) # Iris: uhhhh idk if this is how we're supposed to do this someone help.
+        self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
+        self.pagekey = list(range(capacity)) # Iris: page keys in this bufferpool will just be integers 
+        # Here's how i interpret it, pls lmk if this is wrong:
+        # bufferpool.pool{pagekey, value} with value being the page offset in table 
+        # so pool looks like {0:somepage, 1:empty, ..., 100:somepage100}
         self.key = key
         self.num_columns = num_columns
         self.page_directory = {} # dictionary to store data and offset under RIDS
@@ -45,13 +49,26 @@ class Table:
         
         self.new_base_page_range()# make the first base page range 
 
-    def key_into_buffer(self, key, value): # Iris
-        self.Bufferpool.buffer_insert(key, value) # idk if calling this function will connect tbale to bufferpool?? 
+    def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
+        # This function also inserts the page into the bufferpool if it's not already in there
+        # Iris: the key in buffer_insert(key, value) is where we put the page in the actual pool
+        #       the value is the page offset --> page we are inserting into the buffer pool
+        pagekey = 0 # this is for marking the page as dirty later
+        for i in self.pagekey:
+            # looking for free spots in bufferpool
+            if i not in self.bufferpool.pool: # if key is not in pool, insert into pool
+                self.bufferpool.buffer_insert(i, value) # inserts page into bufferpool 
+                pagekey = i
+                break
+                # otherwise: the key is already in the bufferpool, buffer_insert would return the value at the key already (page in that spot already)
+            elif i in self.bufferpool.pool:
+                pass
+        return pagekey
     
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:#check 
             
-            #find the page to insert into using the first to check capacity 
+            #find the page to insert into using the first to check capacity
             current_pages = self.base_pages[self.cur_base_range_index]
             
             #check capacity
@@ -70,6 +87,10 @@ class Table:
                 offset = current_pages[col].write(value) # constantly points to last datapoint in list
             #store the range index and the offset to the page directory 
             self.page_directory[rid] = (self.cur_base_range_index, offset)
+            
+            pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
+            self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
+            
             return rid 
         else:
             return False
@@ -175,6 +196,9 @@ class Table:
         # Grabs a record from using its RID. If page is less than 0 then we grab a tail record instead.
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
+            
+            pagekey = self.get_pagekey(base_offset) # Iris: inserts page into bufferpool, also checks in page is in bufferpool already, returns pagekey
+            
             base_pages = self.base_pages[base_range_index]# add to base page 
 
             indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
@@ -207,6 +231,10 @@ class Table:
         while current_tail != 0 and current_tail in self.page_directory:# if it exists 
             tail_chain.append(current_tail)#append to the chain 
             tail_range_index, tail_offset = self.page_directory[current_tail]#get range index and offset 
+
+            pagekey = self.get_pagekey(tail_offset) # Iris: adds tail page into bufferpool if its not already in there
+            self.bufferpool.mark_dirty(pagekey) # marks the page as dirty since we are updating it
+            
             tail_pages = self.tail_pages[tail_range_index]# grab all the tail pages 
             current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#read tailpages into current tail 
         
