@@ -1,5 +1,6 @@
 from lstore.table import Table
 from lstore.page import Page
+from lstore.bufferpool import Bufferpool
 import os
 import json
 import io
@@ -14,6 +15,7 @@ class Database():
     # should load pages into the bufferpool instead of directly into the table
     def open(self, path): # naomi
         self.path = path
+        self.bufferpool = Bufferpool(self) # Iris: creates bufferpool when database is opened
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
