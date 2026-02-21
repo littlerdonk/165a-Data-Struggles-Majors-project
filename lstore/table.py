@@ -1,5 +1,6 @@
 from lstore.index import Index
 from lstore.page import Page
+from lstore.bufferpool import Bufferpool
 from time import time
 
 # Layout of columns in metadata: [0] indirection, [1] rid, [2] timestamp, [3] schema encoding
@@ -29,6 +30,7 @@ class Table:
     """
     def __init__(self, name, num_columns, key):
         self.name = name
+        self.Bufferpool = Bufferpool(self) # Iris: uhhhh idk if this is how we're supposed to do this someone help.
         self.key = key
         self.num_columns = num_columns
         self.page_directory = {} # dictionary to store data and offset under RIDS
@@ -43,6 +45,8 @@ class Table:
         
         self.new_base_page_range()# make the first base page range 
 
+    def key_into_buffer(self, key, value): # Iris
+        self.Bufferpool.buffer_insert(key, value) # idk if calling this function will connect tbale to bufferpool?? 
     
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:#check 
