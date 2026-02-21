@@ -4,6 +4,7 @@ class BufferPool():
         self.pool = {}
         self.buffer_capacity = capacity
         self.dirty = set()
+        self.drive = {}
 
     def buffer_insert(self, key, value):  # Nicholas
         if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
@@ -20,8 +21,6 @@ class BufferPool():
                     self.pool[key] = value
             else: # If buffer pool not at capacity then it safe to add new value without the need for any evictions
                 self.pool[key] = value
-
-
 
         elif key in self.pool: # if requested key is already in the buffer pool (RAM) then we simply grab that value
             existing_value = self.pool[key]  # grabs value from pool
