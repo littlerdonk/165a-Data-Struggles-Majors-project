@@ -44,6 +44,9 @@ class BufferPool():
             return False # other wise pin_count = 0, so the page is safe to evict, merge, etc.
     
     def evict_key(self, key):
+        if self.is_page_pinned(key): # Iris: checks if page is pinned before evicting it
+            raise Exception("Eviction failed: page is currently being accessed.")
+        # Checking if the page is dirty or not is included in buffer_insert, so I won't add it here
         del self.pool[key]  # deletes key from buffer pool
 
 
