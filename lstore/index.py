@@ -21,6 +21,17 @@ class Index:
             btree[key].append(value)
         else:
             btree[key] = [value]
+
+    #Alvin: NEW Function for deleting RID in a column (usually for removal of outdated recors)
+    def delete_rid(self, column, valueInCol, RIDtoDelete):
+        if self.indices[column] is not None:
+            colIndex = self.indices[column]
+            RIDOutput = colIndex[valueInCol]
+            RIDOutput.remove(RIDtoDelete)
+            if len(RIDOutput) == 0:
+                del colIndex[valueInCol]
+        else:
+            return False
     """
     # returns the location of all records with the given value on column "column"
     """
@@ -52,7 +63,7 @@ class Index:
     """
     # optional: Create index on specific column
     """
-    #Note that primary key is already made in initialization
+    #Updated again on 2/21/26 to be able to handle cases where we removed outdated RID records, so we don't reenter then into index 
     #Alvin: Redone for M2 to allow making the index AFTER already having records inserted, will go through every RID
     # (base and tail) and add its column value into the newly created btree
     def create_index(self, column_number):
@@ -60,7 +71,8 @@ class Index:
         self.indices[column_number] = OOBTree()
         #Index/btree can be created at any point in time for non-primary key columns, so if creating index later, must get all values from before
         #Concept: for all current RID entries, access that specific column number and retrieve + index it to the B-tree
-        for rid in range(0, self.table.rid):
+        flatList = [RID for sublist in list(self.indices[self.table.key].values()) for RID in sublist]
+        for rid in flatList:
             if rid in self.table.page_directory: #checks to make sure rid is in the page directory
                 current_record = self.table.get_record(rid)
                 keyForTree = current_record.columns[column_number]
