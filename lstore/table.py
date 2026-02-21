@@ -292,6 +292,15 @@ class Table:
         for col, value in enumerate(merged_columns):#write merged values back into tail data
             base_pages[col + 4].update(base_offset, value)
 
-        #walk the tail chain 
-        pass
- 
+        current_tail = indirection
+        while current_tail != 0 and current_tail in self.page_directory:
+            tail_range_index, tail_offset = self.page_directory[current_tail]
+            tail_pages = self.tail_pages[tail_range_index]
+            # Read the next tail 
+            next_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)
+            # Remove this tail record from the page directory
+            del self.page_directory[current_tail]
+            current_tail = next_tail  # move to next in chain
+
+        #Reset the base record's indirection 
+        base_pages[INDIRECTION_COLUMN].update(base_offset, 0)
