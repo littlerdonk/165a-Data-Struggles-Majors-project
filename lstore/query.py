@@ -188,10 +188,20 @@ class Query:
                             self.table.index.insert_btree(i, columns[i], tailRID)
                     return True
                 else:
-                    self.table.index.insert_btree(self.table.key, primary_key, rid) # if its not updating ie updating = None roll back to avoid data corruption 
+                    #self.table.index.insert_btree(self.table.key, primary_key, rid) # if its not updating ie updating = None roll back to avoid data corruption 
+                    for i in range(0, len(old_version_info)):
+                        if self.table.index.indices[i] is not None:
+                            self.table.index.insert_btree(i, old_version_info[i], rid) 
                     return False
             else: #primary key not changing push normal update
+                old_version_info = self.table.get_record(rid).columns
+                for i in range(0, len(columns)):
+                    self.table.index.delete_rid(i, old_version_info[i], rid)
                 updating = self.table.update(rid, list(columns))
+                tailRID = self.table.rid - 1
+                for i in range(0, len(columns)):
+                        if self.table.index.indices[i] is not None:
+                            self.table.index.insert_btree(i, columns[i], tailRID)
                 return updating
             
         except:
