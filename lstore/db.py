@@ -15,7 +15,7 @@ class Database():
     # should load pages into the bufferpool instead of directly into the table
     def open(self, path): # naomi
         self.path = path
-        self.bufferpool = Bufferpool(self) # Iris: creates bufferpool when database is opened
+        self.bufferpool = Bufferpool(capacity = 100) # Iris: creates bufferpool when database is opened
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
