@@ -1,9 +1,18 @@
 from lstore.page import Page
 
+# Implementation Idea:
+# - To write something onto a page
+# - Code some disk management function that gets the page from a physical file
+# - Insert into bufferpool
+# - Then page.py write data onto page
+# - after merge and stuff we need to write it back to the disk (page is dirty)
+# - We need file management to update the physical location of the page (file)
+
 class BufferPool():
     def __init__(self, capacity=100):
         # initializes buffer pool and sets capacity for it
-        self.pool = {}
+        self.pool = {} # key calls to the page (value) of pool --> also acts as a key to the page for storage
+        # key template: table_name/page_type/rangeindex/column
         self.buffer_capacity = capacity
         self.dirty = set()
         self.fake_drive = {}
