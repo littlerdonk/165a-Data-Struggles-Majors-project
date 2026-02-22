@@ -48,10 +48,10 @@ class Database():
             # restore the rid counter so we dont reuse old rids
             table.rid = rid
             # restore page directory, converting keys back to integerss and values back to tuples
-            fixed_directory = {}
+            directory = {}
             for k, v in page_directory.items():
-                fixed_directory[int(k)] = tuple(v)
-            table.page_directory = fixed_directory
+                directory[int(k)] = tuple(v)
+            table.page_directory = directory
 
             # FIX THIS load base pages and tail pages back from disk
             table.base_pages = self.load_pages(table, table_data, 'base')
@@ -99,10 +99,10 @@ class Database():
                 'tail_num_records': tail_num_records,
             }
             # convert page directory keys to strings because json requires string keys
-            fixed_directory = {}
+            directory = {}
             for k, v in table.page_directory.items():
-                fixed_directory[str(k)] = list(v)
-            table_data['page_directory'] = fixed_directory
+                directory[str(k)] = list(v)
+            table_data['page_directory'] = directory
 
             meta['tables'].append(table_data)
             # flush dirty pages for this table to disk before closing
