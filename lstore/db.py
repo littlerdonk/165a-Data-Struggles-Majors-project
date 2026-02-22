@@ -15,6 +15,8 @@ class Database():
     # should load pages into the bufferpool instead of directly into the table
     def open(self, path): # naomi
         self.path = path
+        # create bufferpool when database is opened
+        self.bufferpool = BufferPool(capacity=100, path=path)
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
@@ -51,7 +53,7 @@ class Database():
                 fixed_directory[int(k)] = tuple(v)
             table.page_directory = fixed_directory
 
-            # load base pages and tail pages back from disk
+            # FIX THIS load base pages and tail pages back from disk
             table.base_pages = self.load_pages(table, table_data, 'base')
             table.tail_pages = self.load_pages(table, table_data, 'tail')
     
@@ -116,70 +118,7 @@ class Database():
         meta_path = self.path + '/metadata.json'
         meta_file = io.open(meta_path, 'w')
         json.dump(meta, meta_file)
-        meta_file.close()
-
-    # helper for open, loads pages from disk back into memory
-    def load_pages(self, table, table_data, page_type): # naomi
-        pages = []
-        r_idx = 0
-        while True:
-            # each range is its own folder
-            range_folder = 'range_' + str(r_idx)
-            range_path = os.path.join(self.path, table.name, page_type, range_folder)
-            
-            # if the folder doesnt exist we've loaded all the ranges --> stop
-            if not os.path.exists(range_path):
-                break
-                
-            # load each cols page from this range
-            page_range = []
-            for col in range(table.total_columns):
-                # create new page object to load data to
-                page = Page(capacity=512)
-                # read raw bytes from disk back into the page
-                col_file = os.path.join(range_path, 'col_' + str(col) + '.bin')
-                with io.open(col_file, 'rb') as f:
-                    page.data = bytearray(f.read())
-                    
-                # restore how many records were in this page when we saved it
-                num_records_key = page_type + '_num_records'
-                page.num_records = table_data[num_records_key][r_idx][col]
-                page_range.append(page)
-            pages.append(page_range)
-            r_idx += 1
-        return pages
-
-    # helper for close, save pages from memory to disk
-    def save_pages(self, table, page_type): # naomi
-        # figure out if we're saving base or tail pages
-        if page_type == 'base':
-            pages = table.base_pages
-        else:
-            pages = table.tail_pages
-        all_num_records = []
-        r_idx = 0
-        for page_range in pages:
-            # make a folder for this range like
-            range_folder = 'range_' + str(r_idx)
-            range_path = self.path + '/' + table.name + '/' + page_type + '/' + range_folder
-            os.makedirs(range_path, exist_ok=True)
-
-            # save each column page to its own file
-            col_records = []
-            for col in range(len(page_range)):
-                page = page_range[col]
-                # write raw bytes of page to disk
-                col_file = range_path + '/col_' + str(col) + '.bin' # build the path to this column's file
-                # open the file and write the page data to disk
-                col_file_open = io.open(col_file, 'wb')
-                col_file_open.write(page.data)
-                col_file_open.close()
-                # save num records to restore later in open
-                col_records.append(page.num_records)
-
-            all_num_records.append(col_records)
-            r_idx += 1
-        return all_num_records    
+        meta_file.close()    
 
     
         
