@@ -1,6 +1,6 @@
 from lstore.index import Index
 from lstore.page import Page
-from lstore.bufferpool import Bufferpool
+from lstore.bufferpool import BufferPool
 from time import time
 
 # Layout of columns in metadata: [0] indirection, [1] rid, [2] timestamp, [3] schema encoding
