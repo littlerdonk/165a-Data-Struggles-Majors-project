@@ -30,8 +30,8 @@ class Table:
     """
     def __init__(self, name, num_columns, key):
         self.name = name
-        self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
-        self.pagekey = list(range(100)) # Iris: page keys in this bufferpool will just be integers 
+        #self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
+        #self.pagekey = list(range(100)) # Iris: page keys in this bufferpool will just be integers 
         # Here's how i interpret it, pls lmk if this is wrong:
         # bufferpool.pool{pagekey, value} with value being the page offset in table 
         # so pool looks like {0:somepage, 1:empty, ..., 100:somepage100}
@@ -48,7 +48,7 @@ class Table:
         self.cur_base_range_index = -1 # the greater range index for base pages
         
         self.new_base_page_range()# make the first base page range 
-
+'''
     def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
         # This function also inserts the page into the bufferpool if it's not already in there
         # Iris: the key in buffer_insert(key, value) is where we put the page in the actual pool
@@ -64,6 +64,7 @@ class Table:
             elif i in self.bufferpool.pool:
                 pass
         return pagekey
+    '''
     
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:#check 
@@ -88,8 +89,8 @@ class Table:
             #store the range index and the offset to the page directory 
             self.page_directory[rid] = (self.cur_base_range_index, offset)
             
-            pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
-            self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
+            #pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
+            #self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
             
             return rid 
         else:
@@ -197,7 +198,7 @@ class Table:
         if rid in self.page_directory:#in the page directory 
             base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
             
-            pagekey = self.get_pagekey(base_offset) # Iris: inserts page into bufferpool, also checks in page is in bufferpool already, returns pagekey
+            #pagekey = self.get_pagekey(base_offset) # Iris: inserts page into bufferpool, also checks in page is in bufferpool already, returns pagekey
             
             base_pages = self.base_pages[base_range_index]# add to base page 
 
@@ -232,8 +233,8 @@ class Table:
             tail_chain.append(current_tail)#append to the chain 
             tail_range_index, tail_offset = self.page_directory[current_tail]#get range index and offset 
 
-            pagekey = self.get_pagekey(tail_offset) # Iris: adds tail page into bufferpool if its not already in there
-            self.bufferpool.mark_dirty(pagekey) # marks the page as dirty since we are updating it
+            #pagekey = self.get_pagekey(tail_offset) # Iris: adds tail page into bufferpool if its not already in there
+           # self.bufferpool.mark_dirty(pagekey) # marks the page as dirty since we are updating it
             
             tail_pages = self.tail_pages[tail_range_index]# grab all the tail pages 
             current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#read tailpages into current tail 
@@ -268,7 +269,7 @@ class Table:
     def get_rid(self, rid): # Sage and Nicholas
         return Record(rid, key, columns) # Grabs record using get_record function above using RID
 
-    def __merge(self): #Sage 
+    def merge(self): #Sage 
         merge_rid = []#what merges are gonna happen
         for rid in self.page_directory.items():#iterate through the whole page directory 
             range_index, offset = self.page_directory[rid]#grab the range index and the offset from directory
@@ -279,27 +280,27 @@ class Table:
                     merge_rid.append(rid)#append it as it needs to merge
         
         for rid in merge_rids:#read current base columns
-            base_range_index, base_offset = self.page_directory[rid]
-            base_pages = self.base_pages[base_range_index]
-            base_columns = []
-        for col in range(4, self.total_columns):
-            base_columns.append(base_pages[col].read(base_offset))
+            base_range_index, base_offset = self.page_directory[rid]#grab the offset and the range index from directory 
+            base_pages = self.base_pages[base_range_index]#grab the base pages from the range index
+            base_columns = []#new empty columns 
+        for col in range(4, self.total_columns):#iterate through all columns skipping metadata
+            base_columns.append(base_pages[col].read(base_offset))#add to base pages from base offset 
             
         indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)#get indirection 
 
         merged_columns = self.tail_update(base_columns, indirection, version=0)#get latest columns using indirection 
 
         for col, value in enumerate(merged_columns):#write merged values back into tail data
-            base_pages[col + 4].update(base_offset, value)
+            base_pages[col + 4].update(base_offset, value)#do update on basepages subtracting metadata
 
-        current_tail = indirection
-        while current_tail != 0 and current_tail in self.page_directory:
-            tail_range_index, tail_offset = self.page_directory[current_tail]
-            tail_pages = self.tail_pages[tail_range_index]
+        current_tail = indirection#set current tail 
+        while current_tail != 0 and current_tail in self.page_directory:#while there is a current tail that exists in the directory 
+            tail_range_index, tail_offset = self.page_directory[current_tail]#grab the tail offset and range idnex
+            tail_pages = self.tail_pages[tail_range_index]#grab tail pages
             # Read the next tail 
-            next_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)
+            next_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#set next tail to current tails indirection 
             # Remove this tail record from the page directory
-            del self.page_directory[current_tail]
+            del self.page_directory[current_tail]#delete current tail
             current_tail = next_tail  # move to next in chain
 
         #Reset the base record's indirection 
