@@ -1,4 +1,6 @@
 from lstore.page import Page
+import os
+import io
 
 # Implementation Idea:
 # - To write something onto a page
@@ -7,6 +9,34 @@ from lstore.page import Page
 # - Then page.py write data onto page
 # - after merge and stuff we need to write it back to the disk (page is dirty)
 # - We need file management to update the physical location of the page (file)
+
+class DiskManager(): # Iris
+    def __init__(self, path):
+        self.path = path # file path
+
+    # This class should help with the transition of a page from disk (physical file) to the bufferpool (RAM)
+    def write_page(self, table_name, page_type, r_dix, col, page): 
+        # Creates a new file with the inputted information, this input is also the key of the page
+        key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
+        file = self.path + "/" + key
+        file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
+        file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
+        file_open.close() # Once the updated data is written back into the disk, close the file
+
+        # note: if file path doesn't exist, it writes a new file at that path (new page)
+
+    def read_page(self, table_name, page_type, r_idx, col):
+        key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
+        file = self.path + "/" + key
+        if not os.path.exists(file):
+            # if the file path does not exist, then return none
+            return None
+        page = Page(capacity = 512) # set standard 2 bytes capacity
+        file_open = io.open(file, 'rb') # opens a file (page) prepares it for read 
+        page.data = bytearray(file_open.read()) # specified bytes
+        file_open.close() # once page is read, file is closed, but the page is now in the buffer pool
+        return page
+        
 
 class BufferPool():
     def __init__(self, capacity=100):
