@@ -117,7 +117,7 @@ class Database():
         # write metadata to a file so we can load it back later in open
         meta_path = self.path + '/metadata.json'
         meta_file = io.open(meta_path, 'w')
-        json.dump(meta, meta_file)
+        json.dump(meta, meta_file) # converts Python data structures into the standardized JSON format
         meta_file.close()    
 
     
