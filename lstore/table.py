@@ -31,7 +31,7 @@ class Table:
     def __init__(self, name, num_columns, key):
         self.name = name
         self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
-        self.pagekey = list(range(capacity)) # Iris: page keys in this bufferpool will just be integers 
+        self.pagekey = list(range(100)) # Iris: page keys in this bufferpool will just be integers 
         # Here's how i interpret it, pls lmk if this is wrong:
         # bufferpool.pool{pagekey, value} with value being the page offset in table 
         # so pool looks like {0:somepage, 1:empty, ..., 100:somepage100}
