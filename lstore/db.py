@@ -59,7 +59,7 @@ class Database():
             table.cur_base_range_index = len(table.base_pages) - 1
             table.cur_tail_range_index = len(table.tail_pages) - 1
     
-            r_idx = 0
+            r_idx = 0 # this is range index
             for page_range in table.base_pages:
                 for col in range(table.total_columns):
                     page = page_range[col]
