@@ -1,6 +1,6 @@
 from lstore.table import Table
 from lstore.page import Page
-from lstore.bufferpool import Bufferpool
+from lstore.bufferpool import BufferPool
 import os
 import json
 import io
@@ -15,7 +15,7 @@ class Database():
     # should load pages into the bufferpool instead of directly into the table
     def open(self, path): # naomi
         self.path = path
-        self.bufferpool = Bufferpool(capacity = 100) # Iris: creates bufferpool when database is opened
+        self.bufferpool = BufferPool(capacity = 100) # Iris: creates bufferpool when database is opened
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
@@ -60,11 +60,20 @@ class Database():
             table.cur_base_range_index = len(table.base_pages) - 1
             table.cur_tail_range_index = len(table.tail_pages) - 1
     
-            # TODO: load pages into bufferpool instead of directly into table
-            # for page_range in table.base_pages:
-            #     for col, page in enumerate(page_range):
-            #         self.bufferpool.buffer_insert((table.name, 'base', r_idx, col), page)
-    
+            r_idx = 0
+            for page_range in table.base_pages:
+                for col in range(table.total_columns):
+                    page = page_range[col]
+                    # key is (table name, page type, range index, column)
+                    self.bufferpool.buffer_insert((table.name, 'base', r_idx, col), page)
+                r_idx += 1
+
+            r_idx = 0
+            for page_range in table.tail_pages:
+                for col in range(table.total_columns):
+                    page = page_range[col]
+                    self.bufferpool.buffer_insert((table.name, 'tail', r_idx, col), page)
+                r_idx += 1
             self.tables.append(table)
 
 
@@ -95,10 +104,15 @@ class Database():
             table_data['page_directory'] = fixed_directory
 
             meta['tables'].append(table_data)
-            # TODO: flush dirty pages from bufferpool to disk before closing
-            # for key in self.bufferpool.dirty:
-            #     self.bufferpool.evict_key(key)
-
+            # flush dirty pages for this table to disk before closing
+            for key in list(self.bufferpool.dirty):
+                # only flush pages that belong to this table
+                if key[0] == table.name:
+                    page = self.bufferpool.buffer_get(key)
+                    if page:
+                        self.bufferpool.fake_drive[key] = page
+                    self.bufferpool.dirty.remove(key)
+                    
         # write metadata to a file so we can load it back later in open
         meta_path = self.path + '/metadata.json'
         meta_file = io.open(meta_path, 'w')
