@@ -1,3 +1,5 @@
+from lstore.page import Page
+
 class BufferPool():
     def __init__(self, capacity=100):
         # initializes buffer pool and sets capacity for it
