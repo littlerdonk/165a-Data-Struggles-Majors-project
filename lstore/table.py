@@ -47,7 +47,7 @@ class Table:
         self.cur_tail_range_index = -1 # the greater range index for base pages
         self.cur_base_range_index = -1 # the greater range index for base pages
 
-        self.bufferpool = BufferPool(capacity=100, path = dp_path)#set bufferpool
+        self.bufferpool = BufferPool(capacity=100, path=db_path)#set bufferpool
         if not loading:# skip creating empty pages when reloading from disk
             self.new_base_page_range()
     """
