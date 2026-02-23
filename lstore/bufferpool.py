@@ -1,6 +1,4 @@
 from lstore.page import Page
-from lstore.table import Table
-from lstore.db import Database
 import os
 import io
 
@@ -22,7 +20,7 @@ class DiskManager(): # Iris
     def write_page(self, table_name, page_type, r_idx, col, page): 
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
-        self.keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
+        self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
         file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
