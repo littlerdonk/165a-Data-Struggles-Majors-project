@@ -170,7 +170,8 @@ class Query:
                 #Update from Alvin: replace previous tactic with delete_rid and removes RID in other column indexes too
                 old_version_info = self.table.get_record(rid).columns
                 for i in range(0, len(columns)):
-                    self.table.index.delete_rid(i, old_version_info[i], rid)
+                    if columns[i] is not None and self.table.index.indices[i] is not None:
+                        self.table.index.delete_rid(i, old_version_info[i], rid)
                 
                 updating = self.table.update(rid, list(columns))#Sage minor bug fix since matching_rid is a list 
             # Iris's simple example:
@@ -184,8 +185,11 @@ class Query:
                     #self.table.index.insert_btree(self.table.key, new_key_value, rid) # Updates the value in thebtree
                     tailRID = self.table.rid - 1
                     for i in range(0, len(columns)):
-                        if self.table.index.indices[i] is not None:
+                        if columns[i] is not None and self.table.index.indices[i] is not None:
                             self.table.index.insert_btree(i, columns[i], tailRID)
+                        else:
+                            if columns[i] is None:
+                                self.table.index.insert_btree(i, old_version_info[i], tailRID)
                     return True
                 else:
                     #self.table.index.insert_btree(self.table.key, primary_key, rid) # if its not updating ie updating = None roll back to avoid data corruption 
@@ -200,8 +204,11 @@ class Query:
                 updating = self.table.update(rid, list(columns))
                 tailRID = self.table.rid - 1
                 for i in range(0, len(columns)):
-                        if self.table.index.indices[i] is not None:
-                            self.table.index.insert_btree(i, columns[i], tailRID)
+                    if columns[i] is not None and self.table.index.indices[i] is not None:
+                        self.table.index.insert_btree(i, columns[i], tailRID)
+                    else:
+                        if columns[i] is None:
+                            self.table.index.insert_btree(i, old_version_info[i], tailRID)
                 return updating
             
         except:
