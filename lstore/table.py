@@ -46,7 +46,8 @@ class Table:
         self.tail_pages = []
         self.cur_tail_range_index = -1 # the greater range index for base pages
         self.cur_base_range_index = -1 # the greater range index for base pages
-        
+
+        self.bufferpool = BufferPool(capacity=bp_capacity, path=db_path)#set bufferpool
         self.new_base_page_range()# make the first base page range 
 '''
     def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
@@ -65,18 +66,18 @@ class Table:
                 pass
         return pagekey
     '''
-    
+    def get_page(self, page_type, idx, col):#Sage: helper function to get page from bufferpool
+        return self.bufferpool.get_page(self.name, page_type, idx, col)
+        
+    def put_page(self, page_type, idx, col, page):#Sage: helper function to put page into bufferpool
+        self.bufferpool.put_page(self.name, page_type, idx, col, page)
+        
     def insert(self, values): # Nicholas & Sage 
         if len(values) == self.num_columns:#check 
             
-            #find the page to insert into using the first to check capacity
-            current_pages = self.base_pages[self.cur_base_range_index]
+            if not self._get_page('base', self.cur_base_range_index, 0).has_capacity():#Sge new bufferpool check capacity
+                self.new_base_page_range()
             
-            #check capacity
-            if not current_pages[0].has_capacity():#if there is no capacity 
-                self.new_base_page_range()#make a new page range
-                current_pages = self.base_pages[self.cur_base_range_index]# updates current pages to point to new page range 
-                
             rid = self.rid # set rid for insert
             self.rid += 1 # increase rid by one to indicate new rid
                 
@@ -84,11 +85,13 @@ class Table:
             # Insert the value into each column's page
             all_columns = [0, rid, int(time()), 0] + list(values) # this is the all column which stores [indirection, RID, time made, schema encoding] 
             offset = None # reset offset 
-            for col, value in enumerate(all_columns):#iterate though each part of all columns and stores value and METADATA in col 
-                offset = current_pages[col].write(value) # constantly points to last datapoint in list
+            for col, value in enumerate(all_columns):#iterate though each part of all columns and stores value and METADATA in col FIXED FOR BUFFERPOOL
+                page = self._get_page('base', self.cur_base_range_index, col)#set page to be stored
+                offset = page.write(value)#write the value to the page
+                self._put_page('base', self.cur_base_range_index, col, page)#put the new page into bufferpool
             #store the range index and the offset to the page directory 
-            self.page_directory[rid] = (self.cur_base_range_index, offset)
-            
+            self.page_directory[rid] = ('base', self.cur_base_range_index, offset)
+            return rid             
             #pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
             #self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
             
@@ -100,49 +103,42 @@ class Table:
     def update(self, rid, values): # Sage 
         if rid not in self.page_directory:#check if its not in the page directory 
             return False
-        #get current Values from base or any existing tails 
-        current_record = self.get_record(rid) 
-        #get base range index and base offset from the page directory 
-        base_range_index, base_offset = self.page_directory[rid]
-        #get base pages from the range index
-        base_pages = self.base_pages[base_range_index]
-        #store the old direction 
-        old_direction = base_pages[INDIRECTION_COLUMN].read(base_offset)
+
+        #get base range index and base offset from the page directory and page type M2
+        page_type, base_range_index, base_offset = self.page_directory[rid]
+        #Sage: new bufferpool implimentation 
+        base_direction_page = self._get_page('base', base_range_index, INDIRECTION_COLUMN)#grab pages indirection page
+        old_indirection = base_direction_page.read(base_offset)#set old indirection 
+        
         #get the current record via the RID
         current_record = self.get_record(rid)
         #store a copy of current record into tail columns 
         tail_columns = current_record.columns.copy()
-        
-        # get current tail pages
-        for col, data in enumerate(values):# iterativly apply updates through columns 
-            if data is not None:#if data is not not 
-                tail_columns[col] = data#add data to tail columns 
-                
-        tail_pages = self.get_current_tail_pages()
-        
-        #create new tail RID 
-        tail_rid = self.rid 
-        self.rid  += 1
 
         # schema encoding calculation
         schema_encoding = 0
         for i, val in enumerate(values):
             if val is not None:
                 schema_encoding += (1 << i)# reads the value of i as a bit map
-
-        all_columns = [old_direction, tail_rid, int(time()), schema_encoding] + tail_columns# create all columns wit metadata and tail_columsn
-        # do the update
-        tail_offset = None #set offset to none to update after adding page for speed
-        for col, value in enumerate(all_columns): #enumerate through all columns metadata
-            tail_offset = tail_pages[col].write(value)#update offset to point ot latest page
-            
-        # Get location
-        page_index, offset = self.page_directory[rid]
         
-        #store tail in directory 
-        self.page_directory[tail_rid] = (self.cur_tail_range_index, tail_offset)
-        #update base indirection 
-        base_pages[INDIRECTION_COLUMN].update(base_offset, tail_rid)
+        #create new tail RID 
+        tail_rid = self.rid
+        self.rid += 1
+
+        tail_range_idx = self.get_current_tail_pages()#grab current tail pages
+        all_columns = [old_indirection, tail_rid, int(time()), schema_encoding] + tail_columns#set all columns for iterations
+
+        tail_offset = None#set tail offset 
+        for col, value in enumerate(all_columns):#iterate over all columns 
+            page = self._get_page('tail', tail_range_idx, col)#grab page
+            tail_offset = page.write(value)#write page offset 
+            self._put_page('tail', tail_range_idx, col, page)#put page back into bufferpool
+            
+        self.page_directory[tail_rid] = ('tail', tail_range_idx, tail_offset)#set the tail rid 
+
+        # update base indirection to point to new tail
+        base_indir_page.update(base_offset, tail_rid)
+        self._put_page('base', base_range_index, INDIRECTION_COLUMN, base_indir_page)
         
         return True
         
@@ -151,13 +147,15 @@ class Table:
     def delete(self, rid): # Nicholas
         
         #deletes base page as well as tail pages of record associated with rid
-        #FIX BY Sage to include support for tail files and Btree Indexing 
+        #FIX BY Sage to include support for tail files and Btree Indexing AND NOW INCLUDES BUFFERPOOL M2
         if rid in self.page_directory:#check if the RID exists in page directory
-             # Locates slot including base page range and offset with rid in page directory
-            location, offset = self.page_directory[rid]#Update Sage adds offset and index to location search 
-            for col in range(self.total_columns):# iterate through self.total columns 
-                page = self.base_pages[location][col]#find the page requested
-                page.update(offset, None)#update to None from the offset which deletes the entry 
+             page_type, range_index, offset = self.page_directory[rid]#grab the three criteria as normal 
+            
+            for col in range(self.total_columns):#iterate over total columns 
+                page = self._get_page('base', range_index, col)#grab page 
+                page.update(offset, None)#update it to none to delete it 
+                self._put_page('base', range_index, col, page)#put deleted apge back into directory 
+
             del self.page_directory[rid]#delete rid from page directory 
             return True
            
@@ -166,48 +164,54 @@ class Table:
             return False
 
 
-    def new_base_page_range(self):# Sage 
+    def new_base_page_range(self):# Sage fixeed for bufferpool
+        new_idx = self.cur_base_range_index + 1#make index
+        self.cur_base_range_index = new_idx#set index
+        for col in range(self.total_columns):
+            self._put_page('base', new_idx, col, Page(capacity=512))#put pages in bufferpool
+        '''
         # create page range
         page_range = [] 
         for blank in range(self.total_columns): #iterate through every column
             page_range.append(Page(capacity=512))#make new pages
         self.base_pages.append(page_range)#append that to the base page
         self.cur_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
-            
-    def new_tail_page_range(self):# Sage 
-         #create tail page range
+        ''' 
+    def new_tail_page_range(self):# Sage fixxed for bufferpool 
+        new_idx = self.cur_tail_range_index + 1#make a new index 
+        self.cur_tail_range_index = new_idx#set the new index
+        for col in range(self.total_columns):
+            self._put_page('tail', new_idx, col, Page(capacity=512))#put pages into bufferpool
+        '''
+        #create tail page range
         page_range = [] 
         for blank in range(self.total_columns): #iterate through every column
             page_range.append(Page(capacity=512))# make new pages again 
         self.tail_pages.append(page_range)#append to tail pages 
         self.cur_tail_range_index = len(self.tail_pages) - 1 # set tail range index by the length of the pages -1 
-        
+        '''
             
     def get_current_tail_pages(self):# Sage 
         #get current tail page range and create if needed
         if self.cur_tail_range_index < 0 :# if this is the first page
             self.new_tail_page_range()# make new page range
-        current_pages = self.tail_pages[self.cur_tail_range_index]#add index range page to current pages
-        if not current_pages[0].has_capacity():#check capacity and add if needed 
-            self.new_tail_page_range()#add new page range for more capacity 
-            current_pages = self.tail_pages[self.cur_tail_range_index] # point to new page range
-        return current_pages
+        if not self._get_page('tail', self.cur_tail_range_index, 0).has_capacity():#Sage New bufferpool implimentation 
+            self.new_tail_page_range()#return the page range 
+        return self.cur_tail_range_index#return the index of the page range
 
     def get_record(self, rid, page_version=0):# Sage
         # Grabs a record from using its RID. If page is less than 0 then we grab a tail record instead.
         if rid in self.page_directory:#in the page directory 
-            base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
+            page_type, base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
             
             #pagekey = self.get_pagekey(base_offset) # Iris: inserts page into bufferpool, also checks in page is in bufferpool already, returns pagekey
-            
-            base_pages = self.base_pages[base_range_index]# add to base page 
 
-            indirection = base_pages[INDIRECTION_COLUMN].read(base_offset) # set indirection 
+            indirection = self._get_page('base', range_index, INDIRECTION_COLUMN).read(offset)
             columns = []
             
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
-                value = base_pages[col].read(base_offset)#grab value from the read of the offset
-                columns.append(value)#append it to columns 
+                value = self._get_page('base', range_index, col).read(offset)#new bufferpool setting and getting 
+                columns.append(value)
             if indirection != 0: #If version of record is requested and record has tail pages then we apply tail updates.
                 columns = self.tail_update(columns, indirection, page_version)#take all the columns and the in direction to update tail
             key = columns[self.key] 
@@ -231,21 +235,15 @@ class Table:
         current_tail = tail_rid# set current tail 
         while current_tail != 0 and current_tail in self.page_directory:# if it exists 
             tail_chain.append(current_tail)#append to the chain 
-            tail_range_index, tail_offset = self.page_directory[current_tail]#get range index and offset 
+            tail_type, tail_range_index, tail_offset = self.page_directory[current_tail]#get range index and offset 
 
-            #pagekey = self.get_pagekey(tail_offset) # Iris: adds tail page into bufferpool if its not already in there
-           # self.bufferpool.mark_dirty(pagekey) # marks the page as dirty since we are updating it
+            current_tail = self._get_page('tail', t_range, INDIRECTION_COLUMN).read(t_offset)
             
-            tail_pages = self.tail_pages[tail_range_index]# grab all the tail pages 
-            current_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#read tailpages into current tail 
-        
         # Determine how many tails to apply based on version
         if version == 0:
             # Apply all tails
             num_apply = len(tail_chain)
         else:
-            # version -1 means skip the 1st tail, -2 means skip 2 tails, etc.
-            num_skip = abs(version)
             num_apply = max(0, len(tail_chain) - num_skip)
         
         merged_columns = base_columns.copy()#Start with base columns
@@ -253,14 +251,12 @@ class Table:
         process = tail_chain[::-1][:num_apply]#Apply tails from oldest to newest
         
         for item in process:#iterate through process 
-            tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
-            tail_pages = self.tail_pages[tail_range_index]# set the tail pages
-            schema_encoding = tail_pages[SCHEMA_ENCODING_COLUMN].read(tail_offset)#set the schemea encoding 
+            tail_type, tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
+            schema_encoding = self._get_page('tail', t_range, SCHEMA_ENCODING_COLUMN).read(t_offset)
             
             #Apply updates from this tail record based on schema encoding
             for col in range(self.num_columns):
                 if schema_encoding & (1 << col):# check if it was updated
-                    tail_value = tail_pages[col + 4].read(tail_offset)#read the update
                     merged_columns[col] = tail_value#set the update into merged columns 
         
         return merged_columns #return all the updates 
@@ -269,39 +265,51 @@ class Table:
     def get_rid(self, rid): # Sage and Nicholas
         return Record(rid, key, columns) # Grabs record using get_record function above using RID
 
-    def merge(self): #Sage 
-        merge_rid = []#what merges are gonna happen
-        for rid in self.page_directory.items():#iterate through the whole page directory 
-            range_index, offset = self.page_directory[rid]#grab the range index and the offset from directory
-            if range_index <= self.cur_base_range_index:# if the range index is less than or = to the base range index
-                base_pages = self.base_pages[range_index]#set the base pages to the grabbed range index
-                indirection = base_pages[INDIRECTION_COLUMN].read(offset)#set indirection 
-                if indirection != 0 and indirection in self.page_directory:# if there is an indirection that exists in the directory
-                    merge_rid.append(rid)#append it as it needs to merge
-        
-        for rid in merge_rids:#read current base columns
-            base_range_index, base_offset = self.page_directory[rid]#grab the offset and the range index from directory 
-            base_pages = self.base_pages[base_range_index]#grab the base pages from the range index
-            base_columns = []#new empty columns 
-        for col in range(4, self.total_columns):#iterate through all columns skipping metadata
-            base_columns.append(base_pages[col].read(base_offset))#add to base pages from base offset 
-            
-        indirection = base_pages[INDIRECTION_COLUMN].read(base_offset)#get indirection 
+    def merge(self): #Sage fixed with bufferpool
 
-        merged_columns = self.tail_update(base_columns, indirection, version=0)#get latest columns using indirection 
+        merge_rids = []# what rids need merging 
+        for rid, location in list(self.page_directory.items()):#iterate throug the list form of the directory 
+            page_type, range_index, offset = location#grab all the three normal criteria from the page directory 
+            if page_type != 'base':#check if page type is a base page or tail page
+                continue
+            indirection = self._get_page('base', range_index, INDIRECTION_COLUMN).read(offset)#grab indirection from bufferpool
+            if indirection != 0 and indirection in self.page_directory:#if the indirection exissts and is in the directory
+                merge_rids.append(rid)#it needs merging 
 
-        for col, value in enumerate(merged_columns):#write merged values back into tail data
-            base_pages[col + 4].update(base_offset, value)#do update on basepages subtracting metadata
+        for rid in merge_rids:#iterate throug each rid in rids that need merging 
+            if rid not in self.page_directory:#if the rid is not in the page directory skip it 
+                continue
 
-        current_tail = indirection#set current tail 
-        while current_tail != 0 and current_tail in self.page_directory:#while there is a current tail that exists in the directory 
-            tail_range_index, tail_offset = self.page_directory[current_tail]#grab the tail offset and range idnex
-            tail_pages = self.tail_pages[tail_range_index]#grab tail pages
-            # Read the next tail 
-            next_tail = tail_pages[INDIRECTION_COLUMN].read(tail_offset)#set next tail to current tails indirection 
-            # Remove this tail record from the page directory
-            del self.page_directory[current_tail]#delete current tail
-            current_tail = next_tail  # move to next in chain
+            page_type, base_range_index, base_offset = self.page_directory[rid]#grab the three normal cirteria 
 
-        #Reset the base record's indirection 
-        base_pages[INDIRECTION_COLUMN].update(base_offset, 0)
+            base_columns = []#initialize base columns 
+            for col in range(4, self.total_columns):#iterate through total columsn 
+                base_columns.append(self._get_page('base', base_range_index, col).read(base_offset))#append base columsn into base columsn from bufferpool
+
+            indirection = self._get_page('base', base_range_index, INDIRECTION_COLUMN).read(base_offset)#grab indirectionfrom base 
+
+            merged_columns = self.tail_update(base_columns, indirection, version=0)#apply tail updates int obase columns
+            #writes merged values back into base pages
+            for idx, value in enumerate(merged_columns):#iterate through merged columsn 
+                page = self._get_page('base', base_range_index, idx + 4)#set page by getting it from bufferpool
+                page.update(base_offset, value)#run an update
+                self._put_page('base', base_range_index, idx + 4, page)#put the updated page back into buffer pool
+
+            current_tail = indirection#set current tail using indirection 
+            while current_tail != 0 and current_tail in self.page_directory:#while curent tail exists and is in the tail directory 
+                tail_type, tail_range, tail_offset = self.page_directory[current_tail]#grab the three criteria 
+                next_tail = self._get_page('tail', tail_range, INDIRECTION_COLUMN).read(tail_offset)#grab the new tail 
+                del self.page_directory[current_tail]#delete current tail 
+                current_tail = next_tail#set current tail to new tail to delete the whole chain 
+
+            #reset base indirection with no more tails 
+            page = self._get_page('base', base_range_index, INDIRECTION_COLUMN)
+            page.update(base_offset, 0)
+            self._put_page('base', base_range_index, INDIRECTION_COLUMN, page)
+
+        # flush everything
+        self.bufferpool.flush_all()
+    def close(self):
+        # flush all dirty pages to disk on shutdown
+        self.bufferpool.flush_all()
+
