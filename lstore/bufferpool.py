@@ -101,10 +101,10 @@ class BufferPool():
                 # this is just in case the requested page is not in the storage drive either
                 return None
             # Iris: if key is in drive but not bufferpool, bring it into the bufferpool
-            table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
-            page_type = oldest_key[1]
-            r_idx = oldest_key[2]
-            col = oldest_key[3]
+            table_name = key[0] # since key is a tuple, i'm deconstructing it for disk_manager
+            page_type = key[1]
+            r_idx = key[2]
+            col = key[3]
             page = self.disk_manager.get_page(table_name, page_type, r_idx, col)
             self.buffer_insert(key, page)
             return page  # returns the page that we are trying to access
