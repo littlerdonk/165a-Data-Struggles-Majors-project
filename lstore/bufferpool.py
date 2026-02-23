@@ -20,8 +20,10 @@ class DiskManager(): # Iris
     def write_page(self, table_name, page_type, r_idx, col, page): 
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
-        self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
+        if (table_name, page_type, r_idx, col) not in self.keys:
+            self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
+        os.makedirs(os.path.dirname(file), exist_ok=True)
         file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
         file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
         file_open.close() # Once the updated data is written back into the disk, close the file
@@ -30,7 +32,8 @@ class DiskManager(): # Iris
 
     def get_page(self, table_name, page_type, r_idx, col):
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
-        self.keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
+        if (table_name, page_type, r_idx, col) not in self.keys:
+            self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         if not os.path.exists(file):
             # if the file path does not exist, then return none
