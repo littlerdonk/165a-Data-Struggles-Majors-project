@@ -174,13 +174,6 @@ class Query:
                         self.table.index.delete_rid(i, old_version_info[i], rid)
                 
                 updating = self.table.update(rid, list(columns))#Sage minor bug fix since matching_rid is a list 
-            # Iris's simple example:
-            # student_id = 12345 <- Primary Key in this case
-            # updated_columns = [32, 88, 90, 30, 22] <-  every column wants to be updated in this case
-            # user calls update(student_id, updated_columns)
-            # matching_rid <- a list of rids of the columns found using primary key and index locate
-            # self.table.update(matching_rid, columns) should be going through each rid and updating the column with the specified values in updated_columns
-            # If that's successful this update() will return True
                 if updating: # Returns True
                     #self.table.index.insert_btree(self.table.key, new_key_value, rid) # Updates the value in thebtree
                     tailRID = self.table.rid - 1
@@ -213,7 +206,13 @@ class Query:
             
         except:
             return False
-        pass
+            # Iris's simple example:
+            # student_id = 12345 <- Primary Key in this case
+            # updated_columns = [32, 88, 90, 30, 22] <-  every column wants to be updated in this case
+            # user calls update(student_id, updated_columns)
+            # matching_rid <- a list of rids of the columns found using primary key and index locate
+            # self.table.update(matching_rid, columns) should be going through each rid and updating the column with the specified values in updated_columns
+            # If that's successful this update() will return True
 
     
     """
