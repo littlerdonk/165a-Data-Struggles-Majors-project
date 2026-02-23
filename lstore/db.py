@@ -9,7 +9,8 @@ class Database():
 
     def __init__(self):
         self.tables = []
-        pass
+        self.path = None
+        self.bufferpool = None
 
     # loads all the table data from disk back into memory so the database can pick up where it left off
     # should load pages into the bufferpool instead of directly into the table
@@ -94,6 +95,8 @@ class Database():
     def close(self): #naomi
         # if no path is set, nothing to save
         if not self.path:
+            return
+        if not hasattr(self, 'bufferpool') or self.bufferpool is None:
             return
         # this will hold all the info we need to save for every table
         meta = {'tables': []}
