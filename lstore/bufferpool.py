@@ -1,4 +1,6 @@
 from lstore.page import Page
+from lstore.table import Table
+from lstore.db import Database
 import os
 import io
 
@@ -13,11 +15,14 @@ import io
 class DiskManager(): # Iris
     def __init__(self, path):
         self.path = path # file path
+        self.keys = [] # keep track of a list of keys that's in the drive
 
     # This class should help with the transition of a page from disk (physical file) to the bufferpool (RAM)
-    def write_page(self, table_name, page_type, r_dix, col, page): 
+
+    def write_page(self, table_name, page_type, r_idx, col, page): 
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
+        keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
         file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
@@ -25,7 +30,7 @@ class DiskManager(): # Iris
 
         # note: if file path doesn't exist, it writes a new file at that path (new page)
 
-    def read_page(self, table_name, page_type, r_idx, col):
+    def get_page(self, table_name, page_type, r_idx, col):
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
         file = self.path + "/" + key
         if not os.path.exists(file):
@@ -45,17 +50,22 @@ class BufferPool():
         # key template: table_name/page_type/rangeindex/column
         self.buffer_capacity = capacity
         self.dirty = set()
-        self.fake_drive = {}
         self.buffer_order = []
 
     def buffer_insert(self, key, value):  # Nicholas
+        # Note from Iris: key is a tuple of (table_name, page_type, r_idx, col)
         if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
             if self.buffer_at_capacity():  # if bufferpool is at capacity then we must replace our oldest value with a new one
                 # were going to use Least Recently Used for deciding which page to evict from the buffer pool
                 oldest_key = self.buffer_order.pop(0)
                 if oldest_key in self.dirty:
                     # If the oldest value in the buffer pool is not written to the storage drive then we need to write it before eviction
-                    self.fake_drive[oldest_key] = self.pool[oldest_key]  # real storage drive functionality doesnt exist yet but we'll add it later
+                    # Iris:
+                    table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
+                    page_type = oldest_key[1]
+                    r_idx = oldest_key[2]
+                    col = oldest_key[3]
+                    self.DiskManager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
                     self.dirty.remove(oldest_key)
                     self.evict_key(oldest_key)
                     self.pool[key] = value
@@ -77,18 +87,23 @@ class BufferPool():
             return self.pool[key]
 
     # buffer_get is used for guaranteeing that we always get a page
-    def buffer_get(self, key): # Nicholas
+    def buffer_get(self, key): # Nicholas and Iris
         # In order to ensure that we always get a page we check both the pool and the drive
-        if key in self.pool:
+        if key in self.DiskManager.keys and key in self.pool: # Iris: checks if key is in the drive
             # here we just need to reset the requested pages position in the buffer_order and then return it from the buffer pool
             self.buffer_order.remove(key)
             self.buffer_order.append(key)
             return self.pool[key]
         else:
-            if key not in self.fake_drive:
+            if key not in self.DiskManager.keys:
                 # this is just in case the requested page is not in the storage drive either
                 return None
-            page = self.fake_drive.get(key)
+            # Iris: if key is in drive but not bufferpool, bring it into the bufferpool
+            table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
+            page_type = oldest_key[1]
+            r_idx = oldest_key[2]
+            col = oldest_key[3]
+            page = self.DiskManager.get_page(table_name, page_type, r_idx, col)
             self.buffer_insert(key, page)
             return page  # returns the page that we are trying to access
 
