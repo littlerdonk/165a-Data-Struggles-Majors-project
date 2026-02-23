@@ -225,7 +225,7 @@ class Query:
     # Returns False if no record exists in the given range
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
-    # find the record id based on the input index:
+        # find the record id based on the input index:
         try:
             key_column = self.table.key # store the key of the table to be used in locate_range
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
