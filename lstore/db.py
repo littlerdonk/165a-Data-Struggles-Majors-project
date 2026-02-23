@@ -59,7 +59,7 @@ class Database():
             table.tail_pages = self.load_pages(table, table_data, 'tail')
     
             # restore the indexes so we know which page range is the current one
-            table.cur_base_range_index = max(len(table.base_pages) - 1, 0)
+            table.cur_base_range_index = len(table.base_pages) - 1
             table.cur_tail_range_index = len(table.tail_pages) - 1
             
             #Sage: bug fixed logic below ?
@@ -73,8 +73,8 @@ class Database():
                 for col in range(table.num_columns):
                     if table.index.indices[col] is not None:
                         table.index.insert_btree(col, record.columns[col], base_rid)
-                self.tables.append(table)
-            '''
+            self.tables.append(table)
+            """
             r_idx = 0 # this is range index
             for page_range in table.base_pages:
                 for col in range(table.total_columns):
@@ -90,7 +90,7 @@ class Database():
                     self.bufferpool.buffer_insert((table.name, 'tail', r_idx, col), page)
                 r_idx += 1
             self.tables.append(table)
-            '''
+            """
 
     def close(self): #naomi
         # if no path is set, nothing to save
@@ -122,14 +122,7 @@ class Database():
 
             meta['tables'].append(table_data)
             # flush dirty pages for this table to disk before closing
-            for key in list(self.bufferpool.dirty):
-                # only flush pages that belong to this table
-                if key[0] == table.name:
-                    page = self.bufferpool.buffer_get(key)
-                    if page:
-                        self.bufferpool.fake_drive[key] = page
-                    self.bufferpool.dirty.remove(key)
-                    
+            self.bufferpool.flush_all()
         # write metadata to a file so we can load it back later in open
         meta_path = self.path + '/metadata.json'
         meta_file = io.open(meta_path, 'w')
@@ -174,29 +167,29 @@ class Database():
     
     def load_pages(self, table, table_data, page_type):#Sage: loads tables from disk into bufferpool becasue it didnt look like it was here
     # figure out which key holds num_records info
-    num_records_key = page_type + '_num_records'# makes records
-    num_records_list = table_data.get(num_records_key, [])#make a list of all records
-
-    pages = []#holds pages
-
-    # loop through each page range that was saved
-    for range_index, range_num_records in enumerate(num_records_list):
-        page_range = []  # holds all the column pages for this range
-
-        for col in range(table.total_columns):#loop through every column 
-            page = self.bufferpool.get_page(table.name, page_type, range_index, col)#grab pages from disk 
-
-            if page is None:
-                page = Page(capacity=512)#page not in disk make a new one 
-
-            if col < len(range_num_records):
-                page.num_records = range_num_records[col]#restore the count of num records
-
-            page_range.append(page)#add this column's page to the range
-
-        pages.append(page_range)#add the full range to our pages list
-
-    return pages#return all loaded page ranges
+        num_records_key = page_type + '_num_records'# makes records
+        num_records_list = table_data.get(num_records_key, [])#make a list of all records
+    
+        pages = []#holds pages
+    
+        # loop through each page range that was saved
+        for range_index, range_num_records in enumerate(num_records_list):
+            page_range = []  # holds all the column pages for this range
+    
+            for col in range(table.total_columns):#loop through every column 
+                page = self.bufferpool.get_page(table.name, page_type, range_index, col)#grab pages from disk 
+    
+                if page is None:
+                    page = Page(capacity=512)#page not in disk make a new one 
+    
+                if col < len(range_num_records):
+                    page.num_records = range_num_records[col]#restore the count of num records
+    
+                page_range.append(page)#add this column's page to the range
+    
+            pages.append(page_range)#add the full range to our pages list
+    
+        return pages#return all loaded page ranges
 
 
 
