@@ -55,6 +55,41 @@ class BufferPool():
         self.dirty = set()
         self.buffer_order = []
 
+        
+        '''
+        SAGE: CHECK NEW IMPLEMENTATION OF HELPER FUNCTIONS  
+        '''
+    def get_page(self, table_name, page_type, r_idx, col):#Sage get page standerdized implimentation 
+        key = (table_name, page_type, r_idx, col)#set key to conditions in get page
+        if key in self.pool:#check if key is in pool to skip checking disk too ie slightly faster
+            self.buffer_order.remove(key)
+            self.buffer_order.append(key)
+            return self.pool[key]#because we found it in disk 
+        # not in pool, try disk
+        page = self.disk_manager.get_page(table_name, page_type, r_idx, col)#try get page function in disk manager 
+        if page is None:#not there
+            return None
+        self.buffer_insert(key, page)#run an insert on the ley and page to bufferpool
+        return page
+        
+    def put_page(self, table_name, page_type, r_idx, col, page):#put page in bufferpool if it exists
+        key = (table_name, page_type, r_idx, col)#grab key name 
+        if key in self.pool:
+            self.pool[key] = page
+            self.buffer_order.remove(key)
+            self.buffer_order.append(key)
+        else:
+            self.buffer_insert(key, page)#insert it if it is not in pool
+        self.mark_dirty(key)#mark the page dirty 
+
+    #flushes all the pages to disk 
+    def flush_all(self):
+        # write all dirty pages back to disk (call on shutdown or after merge)
+        for key in list(self.dirty):
+            if key in self.pool:
+                self.disk_manager.write_page(*key, self.pool[key])
+        self.dirty.clear()
+
     def buffer_insert(self, key, value):  # Nicholas
         # Note from Iris: key is a tuple of (table_name, page_type, r_idx, col)
         if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
@@ -64,6 +99,12 @@ class BufferPool():
                 if oldest_key in self.dirty:
                     # If the oldest value in the buffer pool is not written to the storage drive then we need to write it before eviction
                     # Iris:
+                    self.disk_manager.write_page(*oldest_key, self.pool[oldest_key])#write the page based off the oldest key the pool
+                    self.dirty.discard(oldest_key)#doscard the oldest key 
+                del self.pool[oldest_key]#delete the oldest key from the pool 
+                self.pool[key] = value#add the page to the key in the pool 
+                self.buffer_order.append(key)#append the page to the buffer order
+                    '''
                     table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
                     page_type = oldest_key[1]
                     r_idx = oldest_key[2]
@@ -73,8 +114,9 @@ class BufferPool():
                     self.evict_key(oldest_key)
                     self.pool[key] = value
                     self.buffer_order.append(key)
+                    '''
 
-                else:  # If the oldest value in buffer pool is in storage drive then it is safe to evict it from buffer pool
+                else:  # If the oldest value in buffer pool is in storage drive then it is safe to evict it from buffer pool SAGE: i also think this might become irrelavent 
                     self.evict_key(oldest_key)  # evicts non-dirty data from pool
                     self.pool[key] = value
                     self.buffer_order.append(key)
