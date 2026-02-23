@@ -17,7 +17,7 @@ class Database():
     def open(self, path): # naomi
         self.path = path
         # create bufferpool when database is opened
-        self.bufferpool = BufferPool(capacity=100, db_path=self.path)
+        self.bufferpool = BufferPool(capacity=100, path=self.path)
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
