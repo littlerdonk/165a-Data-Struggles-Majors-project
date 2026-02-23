@@ -22,7 +22,7 @@ class DiskManager(): # Iris
     def write_page(self, table_name, page_type, r_idx, col, page): 
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
-        keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
+        self.keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
         file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
@@ -32,6 +32,7 @@ class DiskManager(): # Iris
 
     def get_page(self, table_name, page_type, r_idx, col):
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
+        self.keys.append(tuple(table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         if not os.path.exists(file):
             # if the file path does not exist, then return none
@@ -44,7 +45,8 @@ class DiskManager(): # Iris
         
 
 class BufferPool():
-    def __init__(self, capacity=100):
+    def __init__(self, capacity=100, path = None):
+        self.disk_manager = DiskManager(path) # initializes diskmanager so we can pull pages into bufferpool
         # initializes buffer pool and sets capacity for it
         self.pool = {} # key calls to the page (value) of pool --> also acts as a key to the page for storage
         # key template: table_name/page_type/rangeindex/column
@@ -65,7 +67,7 @@ class BufferPool():
                     page_type = oldest_key[1]
                     r_idx = oldest_key[2]
                     col = oldest_key[3]
-                    self.DiskManager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
+                    self.disk_manager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
                     self.dirty.remove(oldest_key)
                     self.evict_key(oldest_key)
                     self.pool[key] = value
@@ -89,13 +91,13 @@ class BufferPool():
     # buffer_get is used for guaranteeing that we always get a page
     def buffer_get(self, key): # Nicholas and Iris
         # In order to ensure that we always get a page we check both the pool and the drive
-        if key in self.DiskManager.keys and key in self.pool: # Iris: checks if key is in the drive
+        if key in self.disk_manager.keys and key in self.pool: # Iris: checks if key is in the drive
             # here we just need to reset the requested pages position in the buffer_order and then return it from the buffer pool
             self.buffer_order.remove(key)
             self.buffer_order.append(key)
             return self.pool[key]
         else:
-            if key not in self.DiskManager.keys:
+            if key not in self.disk_manager.keys:
                 # this is just in case the requested page is not in the storage drive either
                 return None
             # Iris: if key is in drive but not bufferpool, bring it into the bufferpool
@@ -103,7 +105,7 @@ class BufferPool():
             page_type = oldest_key[1]
             r_idx = oldest_key[2]
             col = oldest_key[3]
-            page = self.DiskManager.get_page(table_name, page_type, r_idx, col)
+            page = self.disk_manager.get_page(table_name, page_type, r_idx, col)
             self.buffer_insert(key, page)
             return page  # returns the page that we are trying to access
 
