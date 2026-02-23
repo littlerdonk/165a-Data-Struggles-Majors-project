@@ -43,7 +43,7 @@ class Database():
             page_directory = table_data['page_directory']
     
             # recreate the table object with the same info as before
-            table = Table(name, num_columns, key)
+            table = Table(name, num_columns, key, loading = True)
             
             # restore the rid counter so we dont reuse old rids
             table.rid = rid
@@ -58,9 +58,22 @@ class Database():
             table.tail_pages = self.load_pages(table, table_data, 'tail')
     
             # restore the indexes so we know which page range is the current one
-            table.cur_base_range_index = len(table.base_pages) - 1
+            table.cur_base_range_index = max(len(table.base_pages) - 1, 0)
             table.cur_tail_range_index = len(table.tail_pages) - 1
-    
+            
+            #Sage: bug fixed logic below ?
+            for base_rid, location in table.page_directory.items():
+                page_type, range_index, offset = location
+                if page_type != 'base':
+                    continue
+                record = table.get_record(base_rid)
+                if record is None:
+                    continue
+                for col in range(table.num_columns):
+                    if table.index.indices[col] is not None:
+                        table.index.insert_btree(col, record.columns[col], base_rid)
+
+            '''
             r_idx = 0 # this is range index
             for page_range in table.base_pages:
                 for col in range(table.total_columns):
@@ -76,7 +89,7 @@ class Database():
                     self.bufferpool.buffer_insert((table.name, 'tail', r_idx, col), page)
                 r_idx += 1
             self.tables.append(table)
-
+            '''
 
     def close(self): #naomi
         # if no path is set, nothing to save
