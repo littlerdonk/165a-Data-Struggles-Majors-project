@@ -245,6 +245,7 @@ class Table:
             # Apply all tails
             num_apply = len(tail_chain)
         else:
+            num_skip = abs(version)
             num_apply = max(0, len(tail_chain) - num_skip)
         
         merged_columns = base_columns.copy()#Start with base columns
