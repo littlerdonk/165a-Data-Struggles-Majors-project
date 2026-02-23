@@ -28,7 +28,7 @@ class Table:
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def __init__(self, name, num_columns, key, loading = False):
+    def __init__(self, name, num_columns, key, loading = False, db_path="./ECS165"):
         self.name = name
         #self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
         #self.pagekey = list(range(100)) # Iris: page keys in this bufferpool will just be integers 
@@ -47,7 +47,7 @@ class Table:
         self.cur_tail_range_index = -1 # the greater range index for base pages
         self.cur_base_range_index = -1 # the greater range index for base pages
 
-        self.bufferpool = BufferPool(capacity=100, path= "./ECS165")#set bufferpool
+        self.bufferpool = BufferPool(capacity=100, path = dp_path)#set bufferpool
         if not loading:# skip creating empty pages when reloading from disk
             self.new_base_page_range()
     """
@@ -96,7 +96,6 @@ class Table:
             #pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
             #self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
             
-            return rid 
         else:
             return False
 
@@ -209,11 +208,11 @@ class Table:
             
             #pagekey = self.get_pagekey(base_offset) # Iris: inserts page into bufferpool, also checks in page is in bufferpool already, returns pagekey
 
-            indirection = self.get_page('base', base_range_index, INDIRECTION_COLUMN).read(offset)
+            indirection = self.get_page('base', base_range_index, INDIRECTION_COLUMN).read(base_offset)
             columns = []
             
             for col in range(4,self.total_columns): # iterate through each column. Change 4 to METADATA COLUMN 
-                value = self.get_page('base', base_range_index, col).read(offset)#new bufferpool setting and getting 
+                value = self.get_page('base', base_range_index, col).read(base_offset)#new bufferpool setting and getting 
                 columns.append(value)
             if indirection != 0: #If version of record is requested and record has tail pages then we apply tail updates.
                 columns = self.tail_update(columns, indirection, page_version)#take all the columns and the in direction to update tail
@@ -226,7 +225,7 @@ class Table:
             return None#not in the page directory
             
     def tail_update(self, base_columns, tail_rid, version=0):# sage tail update and partial merge because select versions requires a tail update? 
-         #updates the tail pages used in get record
+        #updates the tail pages used in get record
         #follows tail pages and indirection pointers to get a spesific version 
         #not full merge as it does not change tail records and does not modify pysical storage
         # THIS WILL NEED TO BE CHANGED FOR A FULL MERGE IMPLEMENTATION!!!!!
