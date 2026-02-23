@@ -104,17 +104,16 @@ class BufferPool():
                 del self.pool[oldest_key]#delete the oldest key from the pool 
                 self.pool[key] = value#add the page to the key in the pool 
                 self.buffer_order.append(key)#append the page to the buffer order
-                    '''
-                    table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
-                    page_type = oldest_key[1]
-                    r_idx = oldest_key[2]
-                    col = oldest_key[3]
-                    self.disk_manager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
-                    self.dirty.remove(oldest_key)
-                    self.evict_key(oldest_key)
-                    self.pool[key] = value
-                    self.buffer_order.append(key)
-                    '''
+
+                    #table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
+                    #page_type = oldest_key[1]
+                    #r_idx = oldest_key[2]
+                    #col = oldest_key[3]
+                    #self.disk_manager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
+                    #self.dirty.remove(oldest_key)
+                    #self.evict_key(oldest_key)
+                    #self.pool[key] = value
+                    #self.buffer_order.append(key)
 
                 else:  # If the oldest value in buffer pool is in storage drive then it is safe to evict it from buffer pool SAGE: i also think this might become irrelavent 
                     self.evict_key(oldest_key)  # evicts non-dirty data from pool
