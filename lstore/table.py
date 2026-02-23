@@ -28,7 +28,7 @@ class Table:
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def __init__(self, name, num_columns, key):
+    def __init__(self, name, num_columns, key, loading = False):
         self.name = name
         #self.bufferpool = Bufferpool(capacity = 100) # Iris: sets up bufferpool
         #self.pagekey = list(range(100)) # Iris: page keys in this bufferpool will just be integers 
@@ -48,7 +48,8 @@ class Table:
         self.cur_base_range_index = -1 # the greater range index for base pages
 
         self.bufferpool = BufferPool(capacity=bp_capacity, path=db_path)#set bufferpool
-        self.new_base_page_range()# make the first base page range 
+        if not loading:# skip creating empty pages when reloading from disk
+            self.new_base_page_range()
 '''
     def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
         # This function also inserts the page into the bufferpool if it's not already in there
