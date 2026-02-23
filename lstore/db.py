@@ -17,7 +17,7 @@ class Database():
     def open(self, path): # naomi
         self.path = path
         # create bufferpool when database is opened
-        self.bufferpool = BufferPool(capacity=100, path=path)
+        self.bufferpool = BufferPool(capacity=100, db_path=self.path)
 
         # create the folder where all our database files will live
         # example: if path is "./my_database", it makes that folder
@@ -61,7 +61,8 @@ class Database():
             # restore the indexes so we know which page range is the current one
             table.cur_base_range_index = len(table.base_pages) - 1
             table.cur_tail_range_index = len(table.tail_pages) - 1
-            
+            if table.cur_base_range_index < 0:
+                table.new_base_page_range()
             #Sage: bug fixed logic below ?
             for base_rid, location in table.page_directory.items():
                 page_type, range_index, offset = location
@@ -137,8 +138,8 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key_index): # naomi
-        table = Table(name, num_columns, key_index)
+    def create_table(self, name, num_columns, key_index):
+        table = Table(name, num_columns, key_index, db_path=self.path)
         self.tables.append(table)
         return table
 
