@@ -72,7 +72,7 @@ class Database():
                 for col in range(table.num_columns):
                     if table.index.indices[col] is not None:
                         table.index.insert_btree(col, record.columns[col], base_rid)
-
+                self.tables.append(table)
             '''
             r_idx = 0 # this is range index
             for page_range in table.base_pages:
@@ -166,3 +166,62 @@ class Database():
             if table.name == name:
                 return table
         return None
+
+
+    
+    def load_pages(self, table, table_data, page_type):#Sage: loads tables from disk into bufferpool becasue it didnt look like it was here
+    # figure out which key holds num_records info
+    num_records_key = page_type + '_num_records'# makes records
+    num_records_list = table_data.get(num_records_key, [])#make a list of all records
+
+    pages = []#holds pages
+
+    # loop through each page range that was saved
+    for range_index, range_num_records in enumerate(num_records_list):
+        page_range = []  # holds all the column pages for this range
+
+        for col in range(table.total_columns):#loop through every column 
+            page = self.bufferpool.get_page(table.name, page_type, range_index, col)#grab pages from disk 
+
+            if page is None:
+                page = Page(capacity=512)#page not in disk make a new one 
+
+            if col < len(range_num_records):
+                page.num_records = range_num_records[col]#restore the count of num records
+
+            page_range.append(page)#add this column's page to the range
+
+        pages.append(page_range)#add the full range to our pages list
+
+    return pages#return all loaded page ranges
+
+
+
+    def save_pages(self, table, page_type):
+        num_records_list = []#will hold num_records for every range and column
+    
+        #figure out how many ranges exist for this page type
+        if page_type == 'base':
+            num_ranges = table.cur_base_range_index + 1#index starts at 0
+        else:
+            num_ranges = table.cur_tail_range_index + 1
+    
+        for range_index in range(num_ranges):
+            range_num_records = []#num_records for each column in this range
+    
+            for col in range(table.total_columns):
+                #grab the page from the bufferpool
+                page = self.bufferpool.get_page(table.name, page_type, range_index, col)
+    
+                if page is not None:
+                    #write the page to disk using the disk manager
+                    self.bufferpool.disk_manager.write_page(
+                        table.name, page_type, range_index, col, page
+                    )
+                    range_num_records.append(page.num_records)#save how full this page was
+                else:
+                    range_num_records.append(0)#page didn't exist, record 0
+    
+            num_records_list.append(range_num_records)
+    
+        return num_records_list
