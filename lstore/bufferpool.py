@@ -101,9 +101,9 @@ class BufferPool():
                     # Iris:
                     self.disk_manager.write_page(*oldest_key, self.pool[oldest_key])#write the page based off the oldest key the pool
                     self.dirty.discard(oldest_key)#doscard the oldest key 
-                del self.pool[oldest_key]#delete the oldest key from the pool 
-                self.pool[key] = value#add the page to the key in the pool 
-                self.buffer_order.append(key)#append the page to the buffer order
+                    del self.pool[oldest_key]#delete the oldest key from the pool 
+                    self.pool[key] = value#add the page to the key in the pool 
+                    self.buffer_order.append(key)#append the page to the buffer order
 
                     #table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
                     #page_type = oldest_key[1]
