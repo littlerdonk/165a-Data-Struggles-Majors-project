@@ -30,7 +30,7 @@ class Database():
 
         # read the metadata file which has all the saved table info
         meta_file = io.open(meta_path, 'r')
-        meta = json.load(meta_file)
+        meta = json.load(meta_file) # converts the JSON file into a python dict
         meta_file.close()
 
         # recreate the table object with the same name, columns, and key as before
@@ -44,22 +44,23 @@ class Database():
     
             # recreate the table object with the same info as before
             table = Table(name, num_columns, key, loading = True, db_path=path)
-            table.bufferpool = self.bufferpool
+            table.bufferpool = self.bufferpool # give the table access to the shared buffer pool
             
             # restore the rid counter so we dont reuse old rids
             table.rid = rid
-            # restore page directory, converting keys back to integerss and values back to tuples
+            # restore page directory, converting keys back to integers and values back to tuples
             directory = {}
             for k, v in page_directory.items():
-                directory[int(k)] = tuple(v)
+                directory[int(k)] = tuple(v) 
             table.page_directory = directory
     
             # restore the indexes so we know which page range is the current one
             if 'cur_base_range_index' in table_data:
+                # indexes are saved directly to load
                 table.cur_base_range_index = table_data['cur_base_range_index']
                 table.cur_tail_range_index = table_data['cur_tail_range_index']
             else:
-                #for older formats
+                #for older formats, indexes not saved, look at length of the records list
                 table.cur_base_range_index = len(table_data.get('base_num_records', [])) - 1
                 table.cur_tail_range_index = len(table_data.get('tail_num_records', [])) - 1
 
@@ -133,7 +134,7 @@ class Database():
         #bufferpool now for sure exists 
         self.tables = [table for table in self.tables if table.name != name]#set tables to each table in tables not named the name spesified: holy  what a sentence 
         table = Table(name, num_columns, key_index, loading=True, db_path=self.path)#make a table with all data 
-        table.bufferpool = self.bufferpool#set the tables bufferpool to the known bfferpool 
+        table.bufferpool = self.bufferpool#set the tables bufferpool to the known bufferpool 
         table.new_base_page_range()#allocate new base range
         self.tables.append(table)#append table 
         return table
@@ -153,6 +154,7 @@ class Database():
     # Returns table with the passed name
     """
     def get_table(self, name): # naomi
+        # search through tables in reverse order (most recently added first)
         for table in reversed(self.tables):
             if table.name == name:
                 return table
