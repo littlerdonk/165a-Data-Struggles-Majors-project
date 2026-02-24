@@ -55,8 +55,14 @@ class Database():
             table.page_directory = directory
     
             # restore the indexes so we know which page range is the current one
-            table.cur_base_range_index = table_data['cur_base_range_index']
-            table.cur_tail_range_index = table_data['cur_tail_range_index']
+            if 'cur_base_range_index' in table_data:
+                table.cur_base_range_index = table_data['cur_base_range_index']
+                table.cur_tail_range_index = table_data['cur_tail_range_index']
+            else:
+                # backwards compatibility for older metadata formats
+                table.cur_base_range_index = len(table_data.get('base_num_records', [])) - 1
+                table.cur_tail_range_index = len(table_data.get('tail_num_records', [])) - 1
+
             num_ranges_base = table.cur_base_range_index + 1
             num_ranges_tail = table.cur_tail_range_index + 1
             #attempts to load all pages directly from disk
@@ -66,9 +72,9 @@ class Database():
             for range_index in range(num_ranges_tail):
                 for col in range(table.total_columns):
                     table.bufferpool.get_page(table.name, 'tail', range_index, col)
-                        # make sure at least 1 base page range
-                    if table.cur_base_range_index < 0:
-                        table.new_base_page_range()
+            # make sure at least 1 base page range
+            if table.cur_base_range_index < 0:
+                table.new_base_page_range()
                 
             #Sage: bug fixed logic below ?
             for base_rid, location in table.page_directory.items():
@@ -142,6 +148,7 @@ class Database():
                 self.path = './ECS165'
             os.makedirs(self.path, exist_ok=True)
             self.bufferpool = BufferPool(capacity=100, path=self.path)
+        self.tables = [table for table in self.tables if table.name != name]
         table = Table(name, num_columns, key_index, loading=True, db_path=self.path)
         table.bufferpool = self.bufferpool
         table.new_base_page_range()
@@ -163,7 +170,7 @@ class Database():
     # Returns table with the passed name
     """
     def get_table(self, name): # naomi
-        for table in self.tables:
+        for table in reversed(self.tables):
             if table.name == name:
                 return table
         return None
