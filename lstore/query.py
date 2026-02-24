@@ -228,6 +228,23 @@ class Query:
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
         # find the record id based on the input index:
+        try: 
+            key_column = self.table.key
+            matching_rids = self.table.index.locate_range(start_range, end_range, key_column)
+            sum_range = 0
+            for rid in matching_rids:
+                if rid not in self.table.page_directory:
+                    continue
+                page_type, range_index, offset = self.table.page_directory[rid]
+                if page_type != 'base':
+                    continue
+                record = self.table.get_record(rid, relative_version)
+                if record is not None:
+                    sum_range += record.columns[aggregate_column_index]
+            return sum_range
+        except Exception:
+            return False
+        '''
         try:
             key_column = self.table.key # store the key of the table to be used in locate_range
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
@@ -245,7 +262,7 @@ class Query:
             return sum_range
         except Exception:
             return False # if inputs are invalid.
-
+'''
     
     """
     :param start_range: int         # Start of the key range to aggregate 
