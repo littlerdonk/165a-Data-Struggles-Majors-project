@@ -70,13 +70,12 @@ class Database():
                 page_type, range_index, offset = location
                 if page_type != 'base':
                     continue
-                record = table.get_record(base_rid)
-                if record is None:
-                    continue
                 for col in range(table.num_columns):
                     if table.index.indices[col] is not None:
-                        table.index.insert_btree(col, record.columns[col], base_rid)
+                        value = table.get_page('base', range_index, 4 + col).read(offset)
+                        table.index.insert_btree(col, value, base_rid)
             self.tables.append(table)
+
             
 
     def close(self): #naomi
