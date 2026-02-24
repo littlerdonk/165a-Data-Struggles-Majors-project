@@ -11,6 +11,7 @@ Naomi Cohen: system architect, scheduling team meetings, completed about 15% tot
 
 Nicholas Pinero: Developer, completed about 15% total: Table.py and Page.py
 
+
 MileStone 2 Contributions:
 
 Sage Dillemuth:
