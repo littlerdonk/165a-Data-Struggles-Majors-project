@@ -86,6 +86,8 @@ class Index:
     #Alvin: Redone for M2 to allow making the index AFTER already having records inserted, will go through every RID
     # (base and tail) and add its column value into the newly created btree
     def create_index(self, column_number):
+        if self.needs_rebuild:
+            self._rebuild_indices()
         #creates the bTree for that column
         self.indices[column_number] = OOBTree()
         #Index/btree can be created at any point in time for non-primary key columns, so if creating index later, must get all values from before
