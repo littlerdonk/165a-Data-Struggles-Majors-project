@@ -244,26 +244,7 @@ class Query:
             return sum_range
         except Exception:
             return False
-        '''
-        try:
-            key_column = self.table.key # store the key of the table to be used in locate_range
-            matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
-            sum_range = 0 # set up sum_range variable for later
-            for rid in matching_rids: # for loop iterates through every rid in the matching_rids list and gets the record from the table
-                #Sage: fixed to remove duplicate records by skiping tail records
-                if rid not in self.table.page_directory:#if rid does not exist in directory 
-                    continue#skipit 
-                page_type, range_index, offset = self.table.page_directory[rid]#grab page type etc
-                if page_type != 'base':#if the type is not base skip it ie skip tails 
-                    continue
-                record = self.table.get_record(rid)#then do normal counting for sum 
-                if record is not None:
-                    sum_range += record.columns[aggregate_column_index]
-            return sum_range
-        except Exception:
-            return False # if inputs are invalid.
-'''
-    
+
     """
     :param start_range: int         # Start of the key range to aggregate 
     :param end_range: int           # End of the key range to aggregate 
