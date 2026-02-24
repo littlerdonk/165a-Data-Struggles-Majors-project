@@ -19,6 +19,6 @@ Iris Yuan: Developer, completed about 15% total: Bufferpool.py, Page.py
 
 Alvin Guo:
 
-Naomi Cohen:
+Naomi Cohen: system architect, scheduling team meetings, completed about 15% total: db.py
 
 Nicholas Pinero:
