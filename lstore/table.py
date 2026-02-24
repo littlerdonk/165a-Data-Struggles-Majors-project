@@ -48,8 +48,6 @@ class Table:
         self.cur_base_range_index = -1 # the greater range index for base pages
 
         self.bufferpool = BufferPool(capacity=100, path=db_path)#set bufferpool
-        if not loading:# skip creating empty pages when reloading from disk
-            self.new_base_page_range()
     """
     def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
         # This function also inserts the page into the bufferpool if it's not already in there
