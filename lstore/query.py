@@ -270,7 +270,7 @@ class Query:
                 page_type, range_index, offset = self.table.page_directory[rid]
                 if page_type != 'base':
                     continue
-                record = self.table.get_record(rid)
+                record = self.table.get_record(rid, relative_version)
                 if record is not None:
                     sum_range += record.columns[aggregate_column_index]
             return sum_range
