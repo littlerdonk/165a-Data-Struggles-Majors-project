@@ -44,7 +44,8 @@ class Database():
             page_directory = table_data['page_directory']
     
             # recreate the table object with the same info as before
-            table = Table(name, num_columns, key, loading = True)
+            table = Table(name, num_columns, key, loading = True, db_path = self.path)#little fix from vs code day to make sure path works
+            table.bufferpool = self.bufferpool#set the bufferpool for table
             
             # restore the rid counter so we dont reuse old rids
             table.rid = rid
@@ -102,6 +103,7 @@ class Database():
         # this will hold all the info we need to save for every table
         meta = {'tables': []}
         for table in self.tables:
+            table.bufferpool.flush_all() #Sage: flush 
             # save base and tail pages to disk and get back num_records for each page
             base_num_records = self.save_pages(table, 'base')
             tail_num_records = self.save_pages(table, 'tail')
@@ -139,8 +141,14 @@ class Database():
     :param key: int             #Index of table key in columns
     """
     def create_table(self, name, num_columns, key_index):
-        table = Table(name, num_columns, key_index, db_path=self.path)
-        self.tables.append(table)
+        if self.bufferpool is None:#Sage fix to check if bufferpool exists and path exists
+            if self.path is None:
+                self.path = './ECS165'
+            self.bufferpool = BufferPool(capacity=100, path=self.path)
+        table = Table(name, num_columns, key_index, db_path=self.path)#make table 
+        self.tables.append(table)#add table to tables
+        table.bufferpool = self.bufferpool#set table's bufferpool
+        table.new_base_page_range()#allocate new base range
         return table
 
     
@@ -207,18 +215,19 @@ class Database():
             range_num_records = []#num_records for each column in this range
     
             for col in range(table.total_columns):
+                key = (table.name, page_type, range_index, col)
                 #grab the page from the bufferpool
-                page = self.bufferpool.get_page(table.name, page_type, range_index, col)
-    
+                page = table.bufferpool.pool.get(key, None)
+                if page is None:#check page is none 
+                    make a new page
+                    page = table.bufferpool.disk_manager.get_page(table.name, page_type, range_index, col)
                 if page is not None:
-                    #write the page to disk using the disk manager
-                    self.bufferpool.disk_manager.write_page(
-                        table.name, page_type, range_index, col, page
-                    )
-                    range_num_records.append(page.num_records)#save how full this page was
+                    #if the page exists write it to the table's bufferpool
+                    table.bufferpool.disk_manager.write_page(table.name, page_type, range_index, col, page)
+                    range_num_records.append(page.num_records)
                 else:
-                    range_num_records.append(0)#page didn't exist, record 0
-    
+                    range_num_records.append(0)
+                    
             num_records_list.append(range_num_records)
     
         return num_records_list
