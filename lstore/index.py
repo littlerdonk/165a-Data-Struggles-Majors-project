@@ -38,19 +38,19 @@ class Index:
     #locate(2, 100) for example, go to column two, and grab all records who have a the value 100 
     #Make sure to get the RID -> self.indices[column][value] = [rid1, rid2, rid3...]
     def locate(self, column, value):# Sage: bug fixes from VS code 
-        if self.needs_rebuild:
-            self._rebuild_indices()  # Lazy rebuild on first query
-        if self.indices[column] is None:# added if none statment to check if there is a column 
-            matching_rids = []
-            for base_rid, location in self.table.page_directory.items():
-                page_type, range_index, offset = location
-                if page_type != 'base':
+        if self.needs_rebuild:#Sage: fix for optimization 
+            self.rebuild_indices()# calls the rebuild function 
+        if self.indices[column] is None:#Sage: optimized and cleaned to implement MS extended cases added checking if the index was not defined
+            matching_rids = []#initialize matching rids 
+            for base_rid, location in self.table.page_directory.items():#grab base rid and location ie offset from page directory 
+                page_type, range_index, offset = location# grab page type range index and offset from location/ offset
+                if page_type != 'base':#skip tail pages as they do not need locating 
                     continue
                 # Read the specific column value
-                col_value = self.table.get_page('base', range_index, 4 + column).read(offset)
+                col_value = self.table.get_page('base', range_index, 4 + column).read(offset)#grab the column value from base pages and get function
                 if col_value == value:
-                    matching_rids.append(base_rid)
-            return matching_rids
+                    matching_rids.append(base_rid)#append the rid to matching rids if the valyes match 
+            return matching_rids#return the matching rids list
         if value in self.indices[column]:#check value in column
             return self.indices[column][value]  
         else:
@@ -61,17 +61,17 @@ class Index:
     """
     # Alvin: will return all RID (not in order but from records with values closer to begin first then to end)
     def locate_range(self, begin, end, column):
-        if self.needs_rebuild:
-            self._rebuild_indices()  # Lazy rebuild on first query
-        if self.indices[column] is None: # sage: check none case to avoid potential errors 
+        if self.needs_rebuild:#Sage: efficency rebuild if needed
+            self.rebuild_indices()
+        if self.indices[column] is None: # sage: check none case to avoid potential errors that did happen
             matching_rids = []
             for base_rid, location in self.table.page_directory.items():
                 page_type, range_index, offset = location
-                if page_type != 'base':
+                if page_type != 'base':#skips tail records for speeeed
                     continue
                 # Read the specific column value
                 col_value = self.table.get_page('base', range_index, 4 + column).read(offset)
-                if begin <= col_value <= end:
+                if begin <= col_value <= end:#append the range if it is between begining and end
                     matching_rids.append(base_rid)
             return matching_rids
         valueExists = list(self.indices[column].keys(min=begin, max=end))
@@ -80,22 +80,22 @@ class Index:
         for value in valueExists:
             RIDList.extend(self.indices[column][value])#add all retrived values to ValidRIDs
         return RIDList
-    def _rebuild_indices(self):
+    def rebuild_indices(self):#Sage
         #Rebuild all indices from page_directory (called lazily on first query)
-        if not self.needs_rebuild:
+        if not self.needs_rebuild:#edge case check
             return
         
-        for base_rid, location in self.table.page_directory.items():
-            page_type, range_index, offset = location
-            if page_type != 'base':
+        for base_rid, location in self.table.page_directory.items():#grab location and base rid
+            page_type, range_index, offset = location#set the other three 
+            if page_type != 'base':#skip tail pages 
                 continue
             # Read only indexed columns from base pages
             for col in range(self.table.num_columns):
                 if self.indices[col] is not None:
-                    value = self.table.get_page('base', range_index, 4 + col).read(offset)
+                    value = self.table.get_page('base', range_index, 4 + col).read(offset)#do a rebuild
                     self.insert_btree(col, value, base_rid)
         
-        self.needs_rebuild = False
+        self.needs_rebuild = False#se tthe rebuild to fale as it has been rebuilt
 
     """
     # optional: Create index on specific column
@@ -105,7 +105,7 @@ class Index:
     # (base and tail) and add its column value into the newly created btree
     def create_index(self, column_number):
         if self.needs_rebuild:
-            self._rebuild_indices()
+            self.rebuild_indices()
         #creates the bTree for that column
         self.indices[column_number] = OOBTree()
         #Index/btree can be created at any point in time for non-primary key columns, so if creating index later, must get all values from before
