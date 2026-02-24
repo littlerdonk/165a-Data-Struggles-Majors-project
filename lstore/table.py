@@ -67,6 +67,8 @@ class Table:
                 pass
         return pagekey
     """
+
+    
     def get_page(self, page_type, idx, col):#Sage: helper function to get page from bufferpool
         return self.bufferpool.get_page(self.name, page_type, idx, col)
         
