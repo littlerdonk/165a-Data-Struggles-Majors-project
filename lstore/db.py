@@ -63,19 +63,8 @@ class Database():
                 table.cur_base_range_index = len(table_data.get('base_num_records', [])) - 1
                 table.cur_tail_range_index = len(table_data.get('tail_num_records', [])) - 1
 
-            num_ranges_base = table.cur_base_range_index + 1
-            num_ranges_tail = table.cur_tail_range_index + 1
-            #attempts to load all pages directly from disk
-            for range_index in range(num_ranges_base):
-                for col in range(table.total_columns):
-                    table.bufferpool.get_page(table.name, 'base', range_index, col)
-            for range_index in range(num_ranges_tail):
-                for col in range(table.total_columns):
-                    table.bufferpool.get_page(table.name, 'tail', range_index, col)
-            # make sure at least 1 base page range
             if table.cur_base_range_index < 0:
                 table.new_base_page_range()
-                
             #Sage: bug fixed logic below ?
             for base_rid, location in table.page_directory.items():
                 page_type, range_index, offset = location
