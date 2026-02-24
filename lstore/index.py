@@ -11,6 +11,7 @@ class Index:
         #Alvin: This makes primary key column into a Btree for indexing
         self.table = table
         self.indices[table.key] = OOBTree()
+        self.needs_rebuild = False  # Flag for lazy index rebuilding
 
     #Alvin: adding an insert function for the b-tree that appends values instead of replaces, this way keys (column values) can refer to multiple values (multiple RIDS)
     def insert_btree(self, column, key, value):
@@ -39,6 +40,8 @@ class Index:
     #locate(2, 100) for example, go to column two, and grab all records who have a the value 100 
     #Make sure to get the RID -> self.indices[column][value] = [rid1, rid2, rid3...]
     def locate(self, column, value):# Sage: bug fixes from VS code 
+        if self.needs_rebuild:
+            self._rebuild_indices()  # Lazy rebuild on first query
         if self.indices[column] is None:# added if none statment to check if there is a column 
             return []
         if value in self.indices[column]:#check value in column
@@ -51,6 +54,8 @@ class Index:
     """
     # Alvin: will return all RID (not in order but from records with values closer to begin first then to end)
     def locate_range(self, begin, end, column):
+        if self.needs_rebuild:
+            self._rebuild_indices()  # Lazy rebuild on first query
         if self.indices[column] is None: # sage: check none case to avoid potential errors 
             return[]
         valueExists = list(self.indices[column].keys(min=begin, max=end))
@@ -59,6 +64,22 @@ class Index:
         for value in valueExists:
             RIDList.extend(self.indices[column][value])#add all retrived values to ValidRIDs
         return RIDList
+    def _rebuild_indices(self):
+        #Rebuild all indices from page_directory (called lazily on first query)
+        if not self.needs_rebuild:
+            return
+        
+        for base_rid, location in self.table.page_directory.items():
+            page_type, range_index, offset = location
+            if page_type != 'base':
+                continue
+            # Read only indexed columns from base pages
+            for col in range(self.table.num_columns):
+                if self.indices[col] is not None:
+                    value = self.table.get_page('base', range_index, 4 + col).read(offset)
+                    self.insert_btree(col, value, base_rid)
+        
+        self.needs_rebuild = False
 
     """
     # optional: Create index on specific column
