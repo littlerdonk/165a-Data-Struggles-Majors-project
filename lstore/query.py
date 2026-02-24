@@ -85,7 +85,7 @@ class Query:
         try: # use Btree to find all RIDs with search_key value
             matching_rids = self.table.index.locate(search_key_index, search_key)
             if not matching_rids:
-                return False
+                return []
             # store list of record objects
             results = []
             for rid in matching_rids: # go through each matching rid
@@ -96,12 +96,9 @@ class Query:
                 results.append(record)
         
             # if we found records, return them; return false if not
-            if results:
-                return results
-            else:
-                return False
+            return results
         except Exception:
-            return False
+            return []
 
     
     """
@@ -121,7 +118,7 @@ class Query:
             # Use B-tree to find all RIDs with search_key value
             matching_rids = self.table.index.locate(search_key_index, search_key)
             if not matching_rids:
-                return False
+                return []
             
             # Store list of record objects
             results = []
@@ -133,12 +130,8 @@ class Query:
                 results.append(record)
             
             # If we found records, return them; return false if not
-            if results:
-                return results
-            else:
-                return False
         except Exception:
-            return False
+            return []
     
 
     
