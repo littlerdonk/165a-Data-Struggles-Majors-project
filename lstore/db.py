@@ -59,15 +59,15 @@ class Database():
                 table.cur_base_range_index = table_data['cur_base_range_index']
                 table.cur_tail_range_index = table_data['cur_tail_range_index']
             else:
-                # backwards compatibility for older metadata formats
+                #for older formats
                 table.cur_base_range_index = len(table_data.get('base_num_records', [])) - 1
                 table.cur_tail_range_index = len(table_data.get('tail_num_records', [])) - 1
 
             if table.cur_base_range_index < 0:
                 table.new_base_page_range()
-            #Sage: bug fixed logic below ?
+
             table.index.needs_rebuild = True#marks index as need to rebuild
-            self.tables.append(table)
+            self.tables.append(table)#append the table to tables
 
             
 
@@ -123,17 +123,19 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key_index):
-        if self.bufferpool is None:
+    def create_table(self, name, num_columns, key_index):#Sage fixes for extended M2
+        
+        if self.bufferpool is None:#check if bufferpool does not exist
             if self.path is None:
-                self.path = './ECS165'
+                self.path = './ECS165'#set path if it somehow does not exist
             os.makedirs(self.path, exist_ok=True)
-            self.bufferpool = BufferPool(capacity=100, path=self.path)
-        self.tables = [table for table in self.tables if table.name != name]
-        table = Table(name, num_columns, key_index, loading=True, db_path=self.path)
-        table.bufferpool = self.bufferpool
-        table.new_base_page_range()
-        self.tables.append(table)
+            self.bufferpool = BufferPool(capacity=100, path=self.path)#make bufferpool becasue it didnt exist before
+        #bufferpool now for sure exists 
+        self.tables = [table for table in self.tables if table.name != name]#set tables to each table in tables not named the name spesified: holy  what a sentence 
+        table = Table(name, num_columns, key_index, loading=True, db_path=self.path)#make a table with all data 
+        table.bufferpool = self.bufferpool#set the tables bufferpool to the known bfferpool 
+        table.new_base_page_range()#allocate new base range
+        self.tables.append(table)#append table 
         return table
     
     """
