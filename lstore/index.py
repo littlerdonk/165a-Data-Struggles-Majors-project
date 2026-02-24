@@ -41,7 +41,16 @@ class Index:
         if self.needs_rebuild:
             self._rebuild_indices()  # Lazy rebuild on first query
         if self.indices[column] is None:# added if none statment to check if there is a column 
-            return []
+            matching_rids = []
+            for base_rid, location in self.table.page_directory.items():
+                page_type, range_index, offset = location
+                if page_type != 'base':
+                    continue
+                # Read the specific column value
+                col_value = self.table.get_page('base', range_index, 4 + column).read(offset)
+                if col_value == value:
+                    matching_rids.append(base_rid)
+            return matching_rids
         if value in self.indices[column]:#check value in column
             return self.indices[column][value]  
         else:
@@ -55,7 +64,16 @@ class Index:
         if self.needs_rebuild:
             self._rebuild_indices()  # Lazy rebuild on first query
         if self.indices[column] is None: # sage: check none case to avoid potential errors 
-            return[]
+            matching_rids = []
+            for base_rid, location in self.table.page_directory.items():
+                page_type, range_index, offset = location
+                if page_type != 'base':
+                    continue
+                # Read the specific column value
+                col_value = self.table.get_page('base', range_index, 4 + column).read(offset)
+                if begin <= col_value <= end:
+                    matching_rids.append(base_rid)
+            return matching_rids
         valueExists = list(self.indices[column].keys(min=begin, max=end))
         RIDList = []
         #removes the lists format so only RID values are inputed into the list
