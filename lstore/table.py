@@ -201,7 +201,7 @@ class Table:
             self.new_tail_page_range()#return the page range 
         return self.cur_tail_range_index#return the index of the page range
 
-    def get_record(self, rid, page_version=0):# Sage
+    def get_record(self, rid, page_version = None):# Sage
         # Grabs a record from using its RID. If page is less than 0 then we grab a tail record instead.
         if rid in self.page_directory:#in the page directory 
             page_type, base_range_index, base_offset = self.page_directory[rid]# set the index and offset simultaniously via RID
@@ -224,7 +224,7 @@ class Table:
         else:
             return None#not in the page directory
             
-    def tail_update(self, base_columns, tail_rid, version=0):# sage tail update and partial merge because select versions requires a tail update? 
+    def tail_update(self, base_columns, tail_rid, version= None):# sage tail update and partial merge because select versions requires a tail update? 
         #updates the tail pages used in get record
         #follows tail pages and indirection pointers to get a spesific version 
         #not full merge as it does not change tail records and does not modify pysical storage
