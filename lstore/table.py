@@ -257,10 +257,15 @@ class Table:
             tail_type, tail_range_index, tail_offset = self.page_directory[item]#grab the range index and the offset 
             schema_encoding = self.get_page('tail', tail_range_index, SCHEMA_ENCODING_COLUMN).read(tail_offset)
             
+            # Batch read all columns at once to reduce page reads with small buffer
+            tail_columns = []
+            for col in range(self.num_columns):
+                tail_columns.append(self.get_page('tail', tail_range_index, 4 + col).read(tail_offset))
+            
             #Apply updates from this tail record based on schema encoding
             for col in range(self.num_columns):
                 if schema_encoding & (1 << col):# check if it was updated
-                    merged_columns[col] = self.get_page('tail', tail_range_index, 4 + col).read(tail_offset)#set the update into merged columns 
+                    merged_columns[col] = tail_columns[col]#set the update into merged columns 
         
         return merged_columns #return all the updates 
     
