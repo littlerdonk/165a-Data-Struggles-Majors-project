@@ -242,7 +242,7 @@ class Table:
             current_tail = self.get_page('tail', tail_range_index, INDIRECTION_COLUMN).read(tail_offset)
             
         # Determine how many tails to apply based on version
-        if version == 0 or version = None:
+        if version == 0 or version == None:
             # Apply all tails
             num_apply = len(tail_chain)
         else:
