@@ -66,14 +66,7 @@ class Database():
             if table.cur_base_range_index < 0:
                 table.new_base_page_range()
             #Sage: bug fixed logic below ?
-            for base_rid, location in table.page_directory.items():
-                page_type, range_index, offset = location
-                if page_type != 'base':
-                    continue
-                for col in range(table.num_columns):
-                    if table.index.indices[col] is not None:
-                        value = table.get_page('base', range_index, 4 + col).read(offset)
-                        table.index.insert_btree(col, value, base_rid)
+            table.index.needs_rebuild = True#marks index as need to rebuild
             self.tables.append(table)
 
             
