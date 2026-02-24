@@ -128,10 +128,15 @@ class Database():
     :param key: int             #Index of table key in columns
     """
     def create_table(self, name, num_columns, key_index):
-        table = Table(name, num_columns, key_index, db_path=self.path)
+        if self.bufferpool is None:
+            if self.path is None:
+                self.path = './ECS165'
+            self.bufferpool = BufferPool(capacity=100, path=self.path)
+        table = Table(name, num_columns, key_index, loading=True, db_path=self.path)
+        table.bufferpool = self.bufferpool
+        table.new_base_page_range()
         self.tables.append(table)
         return table
-
     
     """
     # Deletes the specified table
