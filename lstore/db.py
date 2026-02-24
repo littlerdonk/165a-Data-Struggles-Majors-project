@@ -44,6 +44,7 @@ class Database():
     
             # recreate the table object with the same info as before
             table = Table(name, num_columns, key, loading = True, db_path=path)
+            table.bufferpool = self.bufferpool
             
             # restore the rid counter so we dont reuse old rids
             table.rid = rid
