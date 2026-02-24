@@ -131,6 +131,7 @@ class Database():
         if self.bufferpool is None:
             if self.path is None:
                 self.path = './ECS165'
+            os.makedirs(self.path, exist_ok=True)
             self.bufferpool = BufferPool(capacity=100, path=self.path)
         table = Table(name, num_columns, key_index, loading=True, db_path=self.path)
         table.bufferpool = self.bufferpool
