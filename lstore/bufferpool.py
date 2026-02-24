@@ -1,7 +1,7 @@
 from lstore.page import Page
 import os
 import io
-from collections import OrderedDict
+from collections import OrderedDict#optimization for dictionary method for speed
 
 
 # Implementation Idea:
@@ -75,9 +75,9 @@ class BufferPool():
         
     def put_page(self, table_name, page_type, r_idx, col, page):#put page in bufferpool if it exists
         key = (table_name, page_type, r_idx, col)#grab key name 
-        if key in self.pool:
+        if key in self.pool:#check key in pool
             self.pool[key] = page
-            self.pool.move_to_end(key)
+            self.pool.move_to_end(key)#move to end method in ordered dict for optimization of dictionary 
         else:
             self.buffer_insert(key, page)#insert it if it is not in pool
         self.mark_dirty(key)#mark the page dirty 
@@ -102,10 +102,10 @@ class BufferPool():
                     self.dirty.discard(oldest_key)
             self.pool[key] = value
 
-        elif key in self.pool:  # if requested key is already in the buffer pool (RAM) then we simply grab that value
+        elif key in self.pool: #if requested key is already in the buffer pool 
             self.pool[key] = value
             self.mark_dirty(key)
-            self.pool.move_to_end(key)
+            self.pool.move_to_end(key)#just grab the value 
             return self.pool[key]
 
     # buffer_get is used for guaranteeing that we always get a page
