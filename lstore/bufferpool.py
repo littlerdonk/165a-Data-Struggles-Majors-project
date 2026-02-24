@@ -1,6 +1,8 @@
 from lstore.page import Page
 import os
 import io
+from collections import OrderedDict
+
 
 # Implementation Idea:
 # - To write something onto a page
@@ -49,11 +51,11 @@ class BufferPool():
     def __init__(self, capacity=100, path = None):
         self.disk_manager = DiskManager(path) # initializes diskmanager so we can pull pages into bufferpool
         # initializes buffer pool and sets capacity for it
-        self.pool = {} # key calls to the page (value) of pool --> also acts as a key to the page for storage
+        self.pool = OrderedDict() # key calls to the page (value) of pool --> also acts as a key to the page for storage
         # key template: table_name/page_type/rangeindex/column
         self.buffer_capacity = capacity
         self.dirty = set()
-        self.buffer_order = []
+
 
         
         '''
@@ -62,8 +64,7 @@ class BufferPool():
     def get_page(self, table_name, page_type, r_idx, col):#Sage get page standerdized implimentation 
         key = (table_name, page_type, r_idx, col)#set key to conditions in get page
         if key in self.pool:#check if key is in pool to skip checking disk too ie slightly faster
-            self.buffer_order.remove(key)
-            self.buffer_order.append(key)
+            self.pool.move_to_end(key)
             return self.pool[key]#because we found it in disk 
         # not in pool, try disk
         page = self.disk_manager.get_page(table_name, page_type, r_idx, col)#try get page function in disk manager 
@@ -76,8 +77,7 @@ class BufferPool():
         key = (table_name, page_type, r_idx, col)#grab key name 
         if key in self.pool:
             self.pool[key] = page
-            self.buffer_order.remove(key)
-            self.buffer_order.append(key)
+            self.pool.move_to_end(key)
         else:
             self.buffer_insert(key, page)#insert it if it is not in pool
         self.mark_dirty(key)#mark the page dirty 
@@ -95,39 +95,17 @@ class BufferPool():
         if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
             if self.buffer_at_capacity():  # if bufferpool is at capacity then we must replace our oldest value with a new one
                 # were going to use Least Recently Used for deciding which page to evict from the buffer pool
-                oldest_key = self.buffer_order.pop(0)
+                oldest_key, oldest_page = self.buffer_order.popitem(last = False)
                 if oldest_key in self.dirty:
                     # If the oldest value in the buffer pool is not written to the storage drive then we need to write it before eviction
-                    # Iris:
-                    self.disk_manager.write_page(*oldest_key, self.pool[oldest_key])#write the page based off the oldest key the pool
-                    self.dirty.discard(oldest_key)#doscard the oldest key 
-                    del self.pool[oldest_key]#delete the oldest key from the pool 
-                    self.pool[key] = value#add the page to the key in the pool 
-                    self.buffer_order.append(key)#append the page to the buffer order
-
-                    #table_name = oldest_key[0] # since key is a tuple, i'm deconstructing it for disk_manager
-                    #page_type = oldest_key[1]
-                    #r_idx = oldest_key[2]
-                    #col = oldest_key[3]
-                    #self.disk_manager.write_page(table_name, page_type, r_idx, col, self.pool[oldest_key]) # writing page into drive 
-                    #self.dirty.remove(oldest_key)
-                    #self.evict_key(oldest_key)
-                    #self.pool[key] = value
-                    #self.buffer_order.append(key)
-
-                else:  # If the oldest value in buffer pool is in storage drive then it is safe to evict it from buffer pool SAGE: i also think this might become irrelavent 
-                    self.evict_key(oldest_key)  # evicts non-dirty data from pool
-                    self.pool[key] = value
-                    self.buffer_order.append(key)
-            else:  # If buffer pool not at capacity then it safe to add new value without the need for any evictions
-                self.pool[key] = value
-                self.buffer_order.append(key)
+                    self.disk_manager.write_page(*oldest_key, oldest_page)#write the page based off the oldest key the pool
+                    self.dirty.discard(oldest_key)
+            self.pool[key] = value
 
         elif key in self.pool:  # if requested key is already in the buffer pool (RAM) then we simply grab that value
             self.pool[key] = value
             self.mark_dirty(key)
-            self.buffer_order.remove(key)  # removes accessed key from its current age in the buffer pool
-            self.buffer_order.append(key) # adds the key back to the order so that it is now the newest key
+            self.pool.move_to_end(key)
             return self.pool[key]
 
     # buffer_get is used for guaranteeing that we always get a page
@@ -135,8 +113,7 @@ class BufferPool():
         # In order to ensure that we always get a page we check both the pool and the drive
         if key in self.disk_manager.keys and key in self.pool: # Iris: checks if key is in the drive
             # here we just need to reset the requested pages position in the buffer_order and then return it from the buffer pool
-            self.buffer_order.remove(key)
-            self.buffer_order.append(key)
+            self.pool.move_to_end(key)
             return self.pool[key]
         else:
             if key not in self.disk_manager.keys:
