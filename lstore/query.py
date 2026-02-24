@@ -170,34 +170,38 @@ class Query:
                 if updating: # Returns True
                     #self.table.index.insert_btree(self.table.key, new_key_value, rid) # Updates the value in thebtree
                     tailRID = self.table.rid - 1
-                    for i in range(0, len(columns)):
-                        if columns[i] is not None and self.table.index.indices[i] is not None:
-                            self.table.index.insert_btree(i, columns[i], tailRID)
+                    for i in range(0, len(columns)):#iterate throug hall columns
+                        if columns[i] is not None and self.table.index.indices[i] is not None:#if the entry in columsn exists
+                            self.table.index.insert_btree(i, columns[i], tailRID)#insert it into table via btree
                         else:
-                            if columns[i] is None:
-                                self.table.index.insert_btree(i, old_version_info[i], tailRID)
+                            if columns[i] is None:#if it is none 
+                                self.table.index.insert_btree(i, old_version_info[i], tailRID)#put back the old version as it was not updated
                     return True
                 else:
-                    #self.table.index.insert_btree(self.table.key, primary_key, rid) # if its not updating ie updating = None roll back to avoid data corruption 
-                    for i in range(0, len(old_version_info)):
+                    
+                    for i in range(0, len(old_version_info)):#check each old verion
                         if self.table.index.indices[i] is not None:
-                            self.table.index.insert_btree(i, old_version_info[i], rid) 
+                            self.table.index.insert_btree(i, old_version_info[i], rid) #insert into table 
                     return False
             else: #primary key not changing push normal update
-                old_version_info = self.table.get_record(rid).columns
-                for i in range(0, len(columns)):
+                
+                old_version_info = self.table.get_record(rid).columns#grab the old version 
+                for i in range(0, len(columns)):#iterate over columns
+                    
                     if self.table.index.indices[i] is not None:
-                        self.table.index.delete_rid(i, old_version_info[i], rid)
-                updating = self.table.update(rid, list(columns))
+                        self.table.index.delete_rid(i, old_version_info[i], rid)#delete older versions 
+                        
+                updating = self.table.update(rid, list(columns))#set what columns are updating 
                 tailRID = self.table.rid - 1
-                for i in range(0, len(columns)):
-                    if i == self.table.key:
-                        self.table.index.insert_btree(i, old_version_info[i], rid)
-                    elif self.table.index.indices[i] is not None:
-                        if columns[i] is not None:
-                            self.table.index.insert_btree(i, columns[i], tailRID)
+                
+                for i in range(0, len(columns)):#iterate over columsn 
+                    if i == self.table.key:#check if i is the same as key 
+                        self.table.index.insert_btree(i, old_version_info[i], rid)#insert into table if it is 
+                    elif self.table.index.indices[i] is not None:# if its not check if its none 
+                        if columns[i] is not None:# if it exists but is not in table 
+                            self.table.index.insert_btree(i, columns[i], tailRID)#insert it into table 
                         else:
-                                self.table.index.insert_btree(i, old_version_info[i], tailRID)
+                            self.table.index.insert_btree(i, old_version_info[i], tailRID)#keep the old version 
                 return updating
             
         except:
@@ -221,19 +225,20 @@ class Query:
     """
     def sum(self, start_range, end_range, aggregate_column_index): # Iris
         # find the record id based on the input index:
-        try: 
-            key_column = self.table.key
-            matching_rids = self.table.index.locate_range(start_range, end_range, key_column)
-            sum_range = 0
-            for rid in matching_rids:
-                if rid not in self.table.page_directory:
+        try: #Sage: new change becasue M2
+            
+            key = self.table.key#set key 
+            matching_rids = self.table.index.locate_range(start_range, end_range, key)#set matching rids from locate range 
+            sum_range = 0#initialize sum 
+            for rid in matching_rids:#for eachrid in matching rid
+                if rid not in self.table.page_directory:#skip if not in page directory 
                     continue
-                page_type, range_index, offset = self.table.page_directory[rid]
-                if page_type != 'base':
+                page_type, range_index, offset = self.table.page_directory[rid]#set three criteria 
+                if page_type != 'base':#skip tails 
                     continue
-                record = self.table.get_record(rid)
-                if record is not None:
-                    sum_range += record.columns[aggregate_column_index]
+                record = self.table.get_record(rid)#get record from rid 
+                if record is not None:#if the record exists
+                    sum_range += record.columns[aggregate_column_index]#add it to range
             return sum_range
         except Exception:
             return False
@@ -284,7 +289,7 @@ class Query:
         r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
         if r is not False:
             updated_columns = [None] * self.table.num_columns
-            updated_columns[column] = r.columns[column] + 1
+            updated_columns[column] = r.columns[column] + 1#Sage: small incremet fix column -> columns
             u = self.update(key, *updated_columns)
             return u
         return False
