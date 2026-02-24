@@ -14,8 +14,8 @@ from collections import OrderedDict#optimization for dictionary method for speed
 
 class DiskManager(): # Iris
     def __init__(self, path):
-        self.path = path # file path
-        self.keys = [] # keep track of a list of keys that's in the drive
+        self.path = path # File path
+        self.keys = [] # Keep track of a list of keys that's in the drive
 
     # This class should help with the transition of a page from disk (physical file) to the bufferpool (RAM)
 
@@ -23,11 +23,11 @@ class DiskManager(): # Iris
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
         if (table_name, page_type, r_idx, col) not in self.keys:
-            self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
+            self.keys.append((table_name, page_type, r_idx, col)) # Appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         os.makedirs(os.path.dirname(file), exist_ok=True)
-        file_open = io.open(file, 'wb') # opens a file (page) prepares to write it
-        file_open.write(page.data) # we input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
+        file_open = io.open(file, 'wb') # Opens a file (page) prepares to write it
+        file_open.write(page.data) # We input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
         file_open.close() # Once the updated data is written back into the disk, close the file
 
         # note: if file path doesn't exist, it writes a new file at that path (new page)
@@ -50,9 +50,10 @@ class DiskManager(): # Iris
 class BufferPool():
     def __init__(self, capacity=100, path = None):
         self.disk_manager = DiskManager(path) # Iris: initializes diskmanager so we can pull pages into bufferpool
-        # initializes buffer pool and sets capacity for it
-        self.pool = OrderedDict() # key calls to the page (value) of pool --> also acts as a key to the page for storage
-        # key template: table_name/page_type/rangeindex/column
+        # Initializes buffer pool and sets capacity for it
+        # Enable LRU eviction with oldest entry at the front
+        self.pool = OrderedDict() # Key calls to the page (value) of pool --> also acts as a key to the page for storage
+        # Key template: table_name/page_type/rangeindex/column
         self.buffer_capacity = capacity
         self.dirty = set()
 
@@ -61,30 +62,30 @@ class BufferPool():
         '''
         SAGE: CHECK NEW IMPLEMENTATION OF HELPER FUNCTIONS  
         '''
-    def get_page(self, table_name, page_type, r_idx, col):#Sage get page standerdized implimentation 
-        key = (table_name, page_type, r_idx, col)#set key to conditions in get page
+    def get_page(self, table_name, page_type, r_idx, col): # Sage get page standerdized implimentation 
+        key = (table_name, page_type, r_idx, col) # Set key to conditions in get page
         if key in self.pool:#check if key is in pool to skip checking disk too ie slightly faster
             self.pool.move_to_end(key)
             return self.pool[key]#because we found it in disk 
-        # not in pool, try disk
-        page = self.disk_manager.get_page(table_name, page_type, r_idx, col)#try get page function in disk manager 
-        if page is None:#not there
+        # Not in pool, try disk
+        page = self.disk_manager.get_page(table_name, page_type, r_idx, col) # Try get page function in disk manager 
+        if page is None: # Not there
             return None
-        self.buffer_insert(key, page)#run an insert on the ley and page to bufferpool
+        self.buffer_insert(key, page) # Run an insert on the key and page to bufferpool
         return page
         
-    def put_page(self, table_name, page_type, r_idx, col, page):#put page in bufferpool if it exists
-        key = (table_name, page_type, r_idx, col)#grab key name 
-        if key in self.pool:#check key in pool
+    def put_page(self, table_name, page_type, r_idx, col, page): # Put page in bufferpool if it exists
+        key = (table_name, page_type, r_idx, col) # Grab key name 
+        if key in self.pool: # Check key in pool
             self.pool[key] = page
-            self.pool.move_to_end(key)#move to end method in ordered dict for optimization of dictionary 
+            self.pool.move_to_end(key) # Move to end method in ordered dict for optimization of dictionary 
         else:
-            self.buffer_insert(key, page)#insert it if it is not in pool
-        self.mark_dirty(key)#mark the page dirty 
+            self.buffer_insert(key, page) # Insert it if it is not in pool
+        self.mark_dirty(key) # Mark the page dirty 
 
-    #flushes all the pages to disk 
+    # Flushes all the pages to disk 
     def flush_all(self):
-        # write all dirty pages back to disk (call on shutdown or after merge)
+        # Write all dirty pages back to disk (call on shutdown or after merge)
         for key in list(self.dirty):
             if key in self.pool:
                 self.disk_manager.write_page(*key, self.pool[key])
@@ -92,59 +93,59 @@ class BufferPool():
 
     def buffer_insert(self, key, value):  # Nicholas
         # Note from Iris: key is a tuple of (table_name, page_type, r_idx, col)
-        if key not in self.pool:  # checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
-            if self.buffer_at_capacity():  # if bufferpool is at capacity then we must replace our oldest value with a new one
-                # were going to use Least Recently Used for deciding which page to evict from the buffer pool
+        if key not in self.pool:  # Checks if requested key is already in buffer pool and only moves forward if key is not in buffer pool
+            if self.buffer_at_capacity():  # If bufferpool is at capacity then we must replace our oldest value with a new one
+                # Were going to use Least Recently Used for deciding which page to evict from the buffer pool
                 oldest_key, oldest_page = self.buffer_order.popitem(last = False)
                 if oldest_key in self.dirty:
-                    # If the oldest value in the buffer pool is not written to the storage drive then we need to write it before eviction
+                    # If the oldest value in the buffer pool is not written to the storage drive then we need to flush it before eviction
                     self.disk_manager.write_page(*oldest_key, oldest_page)# Iris: write the page based off the oldest key the pool
                     self.dirty.discard(oldest_key)
             self.pool[key] = value
 
-        elif key in self.pool: #if requested key is already in the buffer pool 
+        elif key in self.pool: # If requested key is already in the buffer pool then we need to 
             self.pool[key] = value
             self.mark_dirty(key)
-            self.pool.move_to_end(key)#just grab the value 
+            self.pool.move_to_end(key) # Just grabs the value 
             return self.pool[key]
 
     # buffer_get is used for guaranteeing that we always get a page
     def buffer_get(self, key): # Nicholas and Iris
-        # In order to ensure that we always get a page we check both the pool and the drive
+        # In order to ensure that we always get a page we check the pool (cache) and then the drive if its not in cache
         if key in self.disk_manager.keys and key in self.pool: # Iris: checks if key is in the drive
-            # here we just need to reset the requested pages position in the buffer_order and then return it from the buffer pool
+            # Here we just need to reset the requested pages position in the buffer_order and then return it from the buffer pool
             self.pool.move_to_end(key)
             return self.pool[key]
         else:
             if key not in self.disk_manager.keys:
-                # this is just in case the requested page is not in the storage drive either
+                # This is just in case the requested page does not exist in the storage drive either
                 return None
             # Iris: if key is in drive but not bufferpool, bring it into the bufferpool
-            table_name = key[0] # since key is a tuple, i'm deconstructing it for disk_manager
+            table_name = key[0] # Since key is a tuple, i'm deconstructing it for disk_manager
             page_type = key[1]
             r_idx = key[2]
             col = key[3]
             page = self.disk_manager.get_page(table_name, page_type, r_idx, col)
             self.buffer_insert(key, page)
-            return page  # returns the page that we are trying to access
+            return page  # Returns the page that we are trying to access
 
     def mark_dirty(self, key):
-        self.dirty.add(key)  # adds key to dirty value's set
+        self.dirty.add(key)  # This tracks whether or not a page has been modified but hasn't been flushed to storage drive
 
     def buffer_at_capacity(self):  # Nicholas
         return len(
-            self.pool) >= self.buffer_capacity  # checks if there is capacity available in bufferpool and returns true/false
+            self.pool) >= self.buffer_capacity  # Checks if there is capacity available in bufferpool and returns true/false
 
     def is_page_pinned(self, key):  # Iris
-        # checking if the pin count of the page is more than 0, if so then the page is locked from merging, eviction, etc.
+        # Checking if the pin count of the page is more than 0, if so then the page is locked from merging, eviction, etc.
         if self.pool[key].pin_count > 0:
-            # assuming self.pool[key] is calling the page??
-            return True  # returns true if page is pinned
+            # Assuming self.pool[key] is calling the page??
+            return True  # Returns true if page is pinned
         else:
-            return False  # other wise pin_count = 0, so the page is safe to evict, merge, etc.
+            return False  # Other wise pin_count = 0, so the page is safe to evict, merge, etc.
 
     def evict_key(self, key):
         if self.is_page_pinned(key):  # Iris: checks if page is pinned before evicting it
             raise Exception("Eviction failed: page is currently being accessed.")
         # Checking if the page is dirty or not is included in buffer_insert, so I won't add it here
-        del self.pool[key]  # deletes key from buffer pool
+        del self.pool[key]  # Deletes key from buffer pool
