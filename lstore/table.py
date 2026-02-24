@@ -39,7 +39,7 @@ class Table:
         self.num_columns = num_columns
         self.page_directory = {} # dictionary to store data and offset under RIDS
         self.index = Index(self)
-        self.merge_threshold_pages = 50  # The threshold to trigger a merge: M2 
+        self.merge_threshold_pages = 10  # The threshold to trigger a merge: M2 
         self.rid = 0
         self.base_pages = []
         self.total_columns = 4 + num_columns 
@@ -47,7 +47,7 @@ class Table:
         self.cur_tail_range_index = -1 # the greater range index for base pages
         self.cur_base_range_index = -1 # the greater range index for base pages
 
-        self.bufferpool = BufferPool(capacity=100, path=db_path)#set bufferpool
+        self.bufferpool = BufferPool(capacity=50, path=db_path)#set bufferpool
     """
     def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
         # This function also inserts the page into the bufferpool if it's not already in there
