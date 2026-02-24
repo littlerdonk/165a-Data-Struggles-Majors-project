@@ -48,24 +48,7 @@ class Table:
         self.cur_base_range_index = -1 # the greater range index for base pages
 
         self.bufferpool = BufferPool(capacity=50, path=db_path)#set bufferpool
-    """
-    def get_pagekey(self, value): # Iris: gets the pagekey of the bufferpool
-        # This function also inserts the page into the bufferpool if it's not already in there
-        # Iris: the key in buffer_insert(key, value) is where we put the page in the actual pool
-        #       the value is the page offset --> page we are inserting into the buffer pool
-        pagekey = 0 # this is for marking the page as dirty later
-        for i in self.pagekey:
-            # looking for free spots in bufferpool
-            if i not in self.bufferpool.pool: # if key is not in pool, insert into pool
-                self.bufferpool.buffer_insert(i, value) # inserts page into bufferpool 
-                pagekey = i
-                break
-                # otherwise: the key is already in the bufferpool, buffer_insert would return the value at the key already (page in that spot already)
-            elif i in self.bufferpool.pool:
-                pass
-        return pagekey
-    """
-
+    
     
     def get_page(self, page_type, idx, col):#Sage: helper function to get page from bufferpool
         return self.bufferpool.get_page(self.name, page_type, idx, col)
@@ -92,9 +75,7 @@ class Table:
                 self.put_page('base', self.cur_base_range_index, col, page)#put the new page into bufferpool
             #store the range index and the offset to the page directory 
             self.page_directory[rid] = ('base', self.cur_base_range_index, offset)
-            return rid             
-            #pagekey = self.get_pagekey(offset) # Iris: inserts page into bufferpool if its not already in there
-            #self.bufferpool.mark_dirty(pagekey) # Iris: marks the page as dirty in bufferpool 
+            return rid              
             
         else:
             return False
