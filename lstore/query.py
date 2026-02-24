@@ -193,15 +193,18 @@ class Query:
             else: #primary key not changing push normal update
                 old_version_info = self.table.get_record(rid).columns
                 for i in range(0, len(columns)):
-                    self.table.index.delete_rid(i, old_version_info[i], rid)
+                    if self.table.index.incices[i] is not None:
+                        self.table.index.delete_rid(i, old_version_info[i], rid)
                 updating = self.table.update(rid, list(columns))
                 tailRID = self.table.rid - 1
                 for i in range(0, len(columns)):
-                    if columns[i] is not None and self.table.index.indices[i] is not None:
-                        self.table.index.insert_btree(i, columns[i], tailRID)
-                    else:
-                        if columns[i] is None:
-                            self.table.index.insert_btree(i, old_version_info[i], tailRID)
+                    if i == self.table.key:
+                        self.table.index.insert_btree(i, old_version_info[i], rid)
+                    elif self.table.index.indices[i] is not None:
+                        if columns[i] is not None:
+                            self.table.index.insert_btree(i, columns[i], tailRID)
+                        else:
+                                self.table.index.insert_btree(i, old_version_info[i], tailRID)
                 return updating
             
         except:
@@ -230,9 +233,15 @@ class Query:
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column) # assuming the inputs are valid
             sum_range = 0 # set up sum_range variable for later
             for rid in matching_rids: # for loop iterates through every rid in the matching_rids list and gets the record from the table
-                record = self.table.get_record(rid) # getting the current record using rid
-                if record is not None: # if record exists, add it to sum_range
-                    sum_range += record.columns[aggregate_column_index] # getting the specified columns using column index
+                #Sage: fixed to remove duplicate records by skiping tail records
+                if rid not in self.table.page_directory:#if rid does not exist in directory 
+                    continue#skipit 
+                page_type, range_index, offset = self.table.page_directory[rid]#grab page type etc
+                if page_type != 'base':#if the type is not base skip it ie skip tails 
+                    continue
+                record = self.table.get_record(rid)#then do normal counting for sum 
+                if record is not None:
+                    sum_range += record.columns[aggregate_column_index]
             return sum_range
         except Exception:
             return False # if inputs are invalid.
@@ -255,7 +264,13 @@ class Query:
             matching_rids = self.table.index.locate_range(start_range, end_range, key_column)
             sum_range = 0
             for rid in matching_rids:
-                record = self.table.get_record(rid, relative_version)
+                #Sage same fix as sum done again on sum version 
+                if rid not in self.table.page_directory:
+                    continue
+                page_type, range_index, offset = self.table.page_directory[rid]
+                if page_type != 'base':
+                    continue
+                record = self.table.get_record(rid)
                 if record is not None:
                     sum_range += record.columns[aggregate_column_index]
             return sum_range
