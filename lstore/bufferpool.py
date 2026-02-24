@@ -30,7 +30,7 @@ class DiskManager(): # Iris
         file_open.write(page.data) # We input the page (from Page.py) into write_page so we can write the data (that should be written in page.py) into the disk
         file_open.close() # Once the updated data is written back into the disk, close the file
 
-        # note: if file path doesn't exist, it writes a new file at that path (new page)
+        # Note: if file path doesn't exist, it writes a new file at that path (new page)
 
     def get_page(self, table_name, page_type, r_idx, col): # Iris
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
@@ -38,12 +38,12 @@ class DiskManager(): # Iris
             self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
         file = self.path + "/" + key
         if not os.path.exists(file):
-            # if the file path does not exist, then return none
+            # If the file path does not exist, then return none
             return None
-        page = Page(capacity = 512) # set standard 2 bytes capacity
-        file_open = io.open(file, 'rb') # opens a file (page) prepares it for read 
-        page.data = bytearray(file_open.read()) # specified bytes
-        file_open.close() # once page is read, file is closed, but the page is now in the buffer pool
+        page = Page(capacity = 512) # Set standard 2 bytes capacity
+        file_open = io.open(file, 'rb') # Opens a file (page) prepares it for read 
+        page.data = bytearray(file_open.read()) # Specified bytes
+        file_open.close() # Once page is read, file is closed, but the page is now in the buffer pool
         return page
         
 
@@ -64,9 +64,9 @@ class BufferPool():
         '''
     def get_page(self, table_name, page_type, r_idx, col): # Sage get page standerdized implimentation 
         key = (table_name, page_type, r_idx, col) # Set key to conditions in get page
-        if key in self.pool:#check if key is in pool to skip checking disk too ie slightly faster
+        if key in self.pool: # Check if key is in pool to skip checking disk too ie slightly faster
             self.pool.move_to_end(key)
-            return self.pool[key]#because we found it in disk 
+            return self.pool[key] # Because we found it in disk 
         # Not in pool, try disk
         page = self.disk_manager.get_page(table_name, page_type, r_idx, col) # Try get page function in disk manager 
         if page is None: # Not there
