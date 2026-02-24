@@ -19,7 +19,7 @@ class DiskManager(): # Iris
 
     # This class should help with the transition of a page from disk (physical file) to the bufferpool (RAM)
 
-    def write_page(self, table_name, page_type, r_idx, col, page): 
+    def write_page(self, table_name, page_type, r_idx, col, page): # Iris
         # Creates a new file with the inputted information, this input is also the key of the page
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
         if (table_name, page_type, r_idx, col) not in self.keys:
@@ -32,7 +32,7 @@ class DiskManager(): # Iris
 
         # note: if file path doesn't exist, it writes a new file at that path (new page)
 
-    def get_page(self, table_name, page_type, r_idx, col):
+    def get_page(self, table_name, page_type, r_idx, col): # Iris
         key = table_name + "/" + page_type + "/range_" + str(r_idx) + "/col_" + str(col) + ".bin"
         if (table_name, page_type, r_idx, col) not in self.keys:
             self.keys.append((table_name, page_type, r_idx, col)) # appends the key into a list so it can be used in bufferpool later
@@ -49,7 +49,7 @@ class DiskManager(): # Iris
 
 class BufferPool():
     def __init__(self, capacity=100, path = None):
-        self.disk_manager = DiskManager(path) # initializes diskmanager so we can pull pages into bufferpool
+        self.disk_manager = DiskManager(path) # Iris: initializes diskmanager so we can pull pages into bufferpool
         # initializes buffer pool and sets capacity for it
         self.pool = OrderedDict() # key calls to the page (value) of pool --> also acts as a key to the page for storage
         # key template: table_name/page_type/rangeindex/column
@@ -98,7 +98,7 @@ class BufferPool():
                 oldest_key, oldest_page = self.buffer_order.popitem(last = False)
                 if oldest_key in self.dirty:
                     # If the oldest value in the buffer pool is not written to the storage drive then we need to write it before eviction
-                    self.disk_manager.write_page(*oldest_key, oldest_page)#write the page based off the oldest key the pool
+                    self.disk_manager.write_page(*oldest_key, oldest_page)# Iris: write the page based off the oldest key the pool
                     self.dirty.discard(oldest_key)
             self.pool[key] = value
 
