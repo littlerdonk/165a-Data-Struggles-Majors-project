@@ -162,9 +162,9 @@ class Query:
                 #Sage: Remove old key from index
                 #Update from Alvin: replace previous tactic with delete_rid and removes RID in other column indexes too
                 old_version_info = self.table.get_record(rid).columns
-                for i in range(0, len(columns)):
-                    if columns[i] is not None and self.table.index.indices[i] is not None:
-                        self.table.index.delete_rid(i, old_version_info[i], rid)
+                btree = self.table.index.indices[self.table.key]
+                if old_version_info[self.table.key] in btree:
+                    del btree[old_version_info[self.table.key]]
                 
                 updating = self.table.update(rid, list(columns))#Sage minor bug fix since matching_rid is a list 
                 if updating: # Returns True
