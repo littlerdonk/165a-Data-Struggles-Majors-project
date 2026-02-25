@@ -18,7 +18,7 @@ Sage Dillemuth:
 
 Iris Yuan: Developer, completed about 15% total: Bufferpool.py, Page.py
 
-Alvin Guo:
+Alvin Guo: Developer, completed about 15%: Index.py, Query.py
 
 Naomi Cohen: system architect, scheduling team meetings, completed about 15% total: db.py
 
