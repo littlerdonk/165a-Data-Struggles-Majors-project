@@ -152,28 +152,13 @@ class Table:
         self.cur_base_range_index = new_idx#set index
         for col in range(self.total_columns):
             self.put_page('base', new_idx, col, Page(capacity=512))#put pages in bufferpool
-        """
-        # create page range
-        page_range = [] 
-        for blank in range(self.total_columns): #iterate through every column
-            page_range.append(Page(capacity=512))#make new pages
-        self.base_pages.append(page_range)#append that to the base page
-        self.cur_base_range_index = len(self.base_pages) - 1 #increase the range index by one 
-        """
+
     def new_tail_page_range(self):# Sage fixxed for bufferpool 
         new_idx = self.cur_tail_range_index + 1#make a new index 
         self.cur_tail_range_index = new_idx#set the new index
         for col in range(self.total_columns):
             self.put_page('tail', new_idx, col, Page(capacity=512))#put pages into bufferpool
-        """
-        #create tail page range
-        page_range = [] 
-        for blank in range(self.total_columns): #iterate through every column
-            page_range.append(Page(capacity=512))# make new pages again 
-        self.tail_pages.append(page_range)#append to tail pages 
-        self.cur_tail_range_index = len(self.tail_pages) - 1 # set tail range index by the length of the pages -1 
-        """
-            
+
     def get_current_tail_pages(self):# Sage 
         #get current tail page range and create if needed
         if self.cur_tail_range_index < 0 :# if this is the first page
