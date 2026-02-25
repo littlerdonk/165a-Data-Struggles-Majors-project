@@ -172,7 +172,10 @@ class Query:
                     tailRID = self.table.rid - 1
                     for i in range(0, len(columns)):#iterate throug hall columns
                         if columns[i] is not None and self.table.index.indices[i] is not None:#if the entry in columsn exists
-                            self.table.index.insert_btree(i, columns[i], tailRID)#insert it into table via btree
+                            if i == self.table.key:
+                                self.table.index.insert_btree(i, columns[i], rid)  # use base rid for key column
+                            else:
+                                self.table.index.insert_btree(i, columns[i], tailRID)
                         else:
                             if columns[i] is None:#if it is none 
                                 self.table.index.insert_btree(i, old_version_info[i], tailRID)#put back the old version as it was not updated
