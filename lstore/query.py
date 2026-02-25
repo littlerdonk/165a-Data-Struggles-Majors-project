@@ -152,60 +152,27 @@ class Query:
 
             new_key_value = columns[self.table.key]#Sage: Bug fix for new eval:  Check if primary key column is being updated
         
-            if new_key_value is not None and new_key_value != primary_key:#check if the primary key is changing
+            # Primary key updates are not allowed.
+            if new_key_value is not None and new_key_value != primary_key:
+                return False
+
+            old_version_info = self.table.get_record(rid).columns#grab the old version 
+            for i in range(0, len(columns)):#iterate over columns
+                if self.table.index.indices[i] is not None:
+                    self.table.index.delete_rid(i, old_version_info[i], rid)#delete older versions 
+                    
+            updating = self.table.update(rid, list(columns))#set what columns are updating 
+            tailRID = self.table.rid - 1
             
-                # Check if new key already exists to avoid duplicates
-                existing = self.table.index.locate(self.table.key, new_key_value)
-                if existing:#if it already exists return false as you cant duplicate a key 
-                    return False 
-                
-                #Sage: Remove old key from index
-                #Update from Alvin: replace previous tactic with delete_rid and removes RID in other column indexes too
-                old_version_info = self.table.get_record(rid).columns
-                btree = self.table.index.indices[self.table.key]
-                if old_version_info[self.table.key] in btree:
-                    del btree[old_version_info[self.table.key]]
-                
-                updating = self.table.update(rid, list(columns))#Sage minor bug fix since matching_rid is a list 
-                if updating: # Returns True
-                    #self.table.index.insert_btree(self.table.key, new_key_value, rid) # Updates the value in thebtree
-                    tailRID = self.table.rid - 1
-                    for i in range(0, len(columns)):#iterate throug hall columns
-                        if columns[i] is not None and self.table.index.indices[i] is not None:#if the entry in columsn exists
-                            if i == self.table.key:
-                                self.table.index.insert_btree(i, columns[i], rid)  # use base rid for key column
-                            else:
-                                self.table.index.insert_btree(i, columns[i], tailRID)
-                        else:
-                            if columns[i] is None:#if it is none 
-                                self.table.index.insert_btree(i, old_version_info[i], tailRID)#put back the old version as it was not updated
-                    return True
-                else:
-                    
-                    for i in range(0, len(old_version_info)):#check each old verion
-                        if self.table.index.indices[i] is not None:
-                            self.table.index.insert_btree(i, old_version_info[i], rid) #insert into table 
-                    return False
-            else: #primary key not changing push normal update
-                
-                old_version_info = self.table.get_record(rid).columns#grab the old version 
-                for i in range(0, len(columns)):#iterate over columns
-                    
-                    if self.table.index.indices[i] is not None:
-                        self.table.index.delete_rid(i, old_version_info[i], rid)#delete older versions 
-                        
-                updating = self.table.update(rid, list(columns))#set what columns are updating 
-                tailRID = self.table.rid - 1
-                
-                for i in range(0, len(columns)):#iterate over columsn 
-                    if i == self.table.key:#check if i is the same as key 
-                        self.table.index.insert_btree(i, old_version_info[i], rid)#insert into table if it is 
-                    elif self.table.index.indices[i] is not None:# if its not check if its none 
-                        if columns[i] is not None:# if it exists but is not in table 
-                            self.table.index.insert_btree(i, columns[i], tailRID)#insert it into table 
-                        else:
-                            self.table.index.insert_btree(i, old_version_info[i], tailRID)#keep the old version 
-                return updating
+            for i in range(0, len(columns)):#iterate over columsn 
+                if i == self.table.key:#check if i is the same as key 
+                    self.table.index.insert_btree(i, old_version_info[i], rid)#insert into table if it is 
+                elif self.table.index.indices[i] is not None:# if its not check if its none 
+                    if columns[i] is not None:# if it exists but is not in table 
+                        self.table.index.insert_btree(i, columns[i], tailRID)#insert it into table 
+                    else:
+                        self.table.index.insert_btree(i, old_version_info[i], tailRID)#keep the old version 
+            return updating
             
         except:
             return False
